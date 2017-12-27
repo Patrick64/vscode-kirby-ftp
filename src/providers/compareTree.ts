@@ -1,57 +1,169 @@
-import * as vscode from 'vscode';
+import { ExtensionContext, TreeDataProvider, EventEmitter, TreeItem, Event, window, TreeItemCollapsibleState, Uri, commands, workspace, TextDocumentContentProvider, CancellationToken, ProviderResult } from 'vscode';
+import * as Client from 'ftp';
 import * as path from 'path';
-import { isNumber } from 'util';
-let Client = require('ftp');
- 
 
-export class CompareTreeDataProvider implements vscode.TreeDataProvider<string> {
-    getTreeItem(offset: string): vscode.TreeItem {
-		// const path = json.getLocation(this.text, parseInt(offset)).path
-		// const valueNode = json.findNodeAtLocation(this.tree, path);
-		// if (valueNode) {
-			let hasChildren = false;
-			let treeItem: vscode.TreeItem = new vscode.TreeItem(offset, vscode.TreeItemCollapsibleState.None);
-			// treeItem.command = {
-			// 	command: 'extension.openJsonSelection',
-			// 	title: '',
-			// 	arguments: [new vscode.Range(this.editor.document.positionAt(valueNode.offset), this.editor.document.positionAt(valueNode.offset + valueNode.length))]
-			// };
-			// treeItem.iconPath = this.getIcon(valueNode);
-			// treeItem.contextValue = valueNode.type   ;
-			return treeItem;
-		// }
-		// return null;
-    }
-    
-    getChildren(offset?: string): Thenable<string[]> {
-		// if (offset) {
-		// 	const path = json.getLocation(this.text, parseInt(offset)).path
-		// 	const node = json.findNodeAtLocation(this.tree, path);
-		// 	return Promise.resolve(this.getChildrenOffsets(node));
-		// } else {
-		// 	return Promise.resolve(this.tree ? this.getChildrenOffsets(this.tree) : []);
-		// }
-        return new Promise((resolve,reject) => {
-            // return Promise.resolve( ["whatever"]);
-        
-            var c = new Client();
-            c.on('ready', function() {
-              c.list(function(err, list) {
-                if (err) throw err;
-                console.dir(list);
-                c.end();
-                resolve(list.map(file => file.name));
-                
-              });
-            });
-            // connect to localhost:21 as anonymous 
-            c.connect({
-                'host':'127.0.0.1',
-                'port':4567,
-                'user':'test',
-                'password':'123'
-            });
-        } )
-        
+interface IEntry {
+	name: string;
+	type: string;
+}
+
+export class FtpNode {
+	private _resource: Uri;
+
+	constructor(private entry: IEntry, private host: string, private _parent: string) {
+		this._resource = Uri.parse(`ftp://${host}/${_parent}/${entry.name}`);
+	}
+
+	public get resource(): Uri {
+		return this._resource;
+	}
+
+	public get path(): string {
+		return path.join(this._parent, this.name);
+	}
+
+	public get name(): string {
+		return this.entry.name;
+	}
+
+	public get isFolder(): boolean {
+		return this.entry.type === 'd' || this.entry.type === 'l';
+	}
+}
+
+export class FtpModel {
+
+	constructor(private host: string, private user: string, private password: string, private port: number) {
+	}
+
+	public connect(): Thenable<Client> {
+		return new Promise((c, e) => {
+			const client = new Client();
+			client.on('ready', () => {
+				c(client);
+			});
+
+			client.on('error', error => {
+				e('Error while connecting: ' + error.message);
+			})
+
+			client.connect({
+				host: this.host,
+				user: this.user,
+				password: this.password,
+				port: this.port
+			});
+		});
+	}
+
+	public get roots(): Thenable<FtpNode[]> {
+		return this.connect().then(client => {
+			return new Promise((c, e) => {
+				client.list((err, list) => {
+					if (err) {
+						return e(err);
+					}
+
+					client.end();
+
+					return c(this.sort(list.map(entry => new FtpNode(entry, this.host, '/'))));
+				});
+			});
+		});
+	}
+
+	public getChildren(node: FtpNode): Thenable<FtpNode[]> {
+		return this.connect().then(client => {
+			return new Promise((c, e) => {
+				client.list(node.path, (err, list) => {
+					if (err) {
+						return e(err);
+					}
+
+					client.end();
+
+					return c(this.sort(list.map(entry => new FtpNode(entry, this.host, node.path))));
+				});
+			});
+		});
+	}
+
+	private sort(nodes: FtpNode[]): FtpNode[] {
+		return nodes.sort((n1, n2) => {
+			if (n1.isFolder && !n2.isFolder) {
+				return -1;
+			}
+
+			if (!n1.isFolder && n2.isFolder) {
+				return 1;
+			}
+
+			return n1.name.localeCompare(n2.name);
+		});
+	}
+
+	public getContent(resource: Uri): Thenable<string> {
+		return this.connect().then(client => {
+			return new Promise((c, e) => {
+				client.get(resource.path.substr(2), (err, stream) => {
+					if (err) {
+						return e(err);
+					}
+
+					let string = ''
+					stream.on('data', function (buffer) {
+						if (buffer) {
+							var part = buffer.toString();
+							string += part;
+						}
+					});
+
+					stream.on('end', function () {
+						client.end();
+						c(string);
+					});
+				});
+			});
+		});
+	}
+}
+
+export class FtpTreeDataProvider implements TreeDataProvider<FtpNode>, TextDocumentContentProvider {
+
+	private _onDidChangeTreeData: EventEmitter<any> = new EventEmitter<any>();
+	readonly onDidChangeTreeData: Event<any> = this._onDidChangeTreeData.event;
+
+	private model: FtpModel;
+
+	public getTreeItem(element: FtpNode): TreeItem {
+		return {
+			label: element.name,
+			collapsibleState: element.isFolder ? TreeItemCollapsibleState.Collapsed : void 0,
+			command: element.isFolder ? void 0 : {
+				command: 'openFtpResource',
+				arguments: [element.resource],
+				title: 'Open FTP Resource'
+			},
+			iconPath: {
+				light: element.isFolder ? path.join(__filename, '..', '..', '..', 'resources', 'light', 'folder.svg') : path.join(__filename, '..', '..', '..', 'resources', 'light', 'document.svg'),
+				dark: element.isFolder ? path.join(__filename, '..', '..', '..', 'resources', 'dark', 'folder.svg') : path.join(__filename, '..', '..', '..', 'resources', 'dark', 'document.svg')
+			}
+		};
+	}
+
+	public getChildren(element?: FtpNode): FtpNode[] | Thenable<FtpNode[]> {
+		if (!element) {
+			if (!this.model) {
+				this.model = new FtpModel('127.0.0.1', 'test', '123',4567);
+			}
+
+			return this.model.roots;
+		}
+
+		return this.model.getChildren(element);
+	}
+
+	public provideTextDocumentContent(uri: Uri, token: CancellationToken): ProviderResult<string> {
+		return this.model.getContent(uri);
 	}
 }
