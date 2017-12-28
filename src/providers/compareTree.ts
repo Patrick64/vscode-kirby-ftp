@@ -11,7 +11,8 @@ export class FtpNode {
 	private _resource: Uri;
 
 	constructor(private entry: IEntry, private host: string, private _parent: string) {
-		this._resource = Uri.parse(`ftp://${host}/${_parent}/${entry.name}`);
+		var uri = `ftp://${host}${_parent}${entry.name}`;
+		this._resource = Uri.parse(uri);
 	}
 
 	public get resource(): Uri {
@@ -141,7 +142,7 @@ export class FtpTreeDataProvider implements TreeDataProvider<FtpNode>, TextDocum
 			collapsibleState: element.isFolder ? TreeItemCollapsibleState.Collapsed : void 0,
 			command: element.isFolder ? void 0 : {
 				command: 'openFtpResource',
-				arguments: [element.resource],
+				arguments: [element],
 				title: 'Open FTP Resource'
 			},
 			iconPath: {
