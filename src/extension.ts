@@ -3,7 +3,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 //import { CompareTreeDataProvider } from './providers/compareTree';
-import { FtpTreeDataProvider, FtpNode } from './providers/compareTree';
+import { FtpTreeDataProvider, CompareNode } from './providers/compareTree';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -16,7 +16,7 @@ export function activate(context: vscode.ExtensionContext) {
     const compareViewProvider = new FtpTreeDataProvider();
     vscode.window.registerTreeDataProvider('compareView', compareViewProvider);
 
-    vscode.commands.registerCommand('openFtpResource', (node: FtpNode) => {
+    vscode.commands.registerCommand('openFtpResource', (node: CompareNode) => {
 		vscode.workspace.openTextDocument(node.resource).then(document => {
             vscode.window.showTextDocument(document);
             
