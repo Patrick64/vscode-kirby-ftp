@@ -2,7 +2,7 @@ import { ExtensionContext, TreeDataProvider, EventEmitter, TreeItem, Event, wind
 import * as path from 'path';
 import { IEntry } from '../models/ientry';
 import { FtpModel } from '../models/ftpModel';
-
+import { DiskModel } from '../models/diskModel';
 
 
 
@@ -152,7 +152,8 @@ export class FtpTreeDataProvider implements TreeDataProvider<CompareNode>, TextD
 	public getChildren(element?: CompareNode): CompareNode[] | Thenable<CompareNode[]> {
 		if (!element) {
 			if (!this.model) {
-				this.model = new CompareModel(new FtpModel('127.0.0.1', 'test', '123',4567), new FtpModel('127.0.0.1', 'test', '123',4567) );
+				// this.model = new CompareModel(new FtpModel('127.0.0.1', 'test', '123',4567), new FtpModel('127.0.0.1', 'test', '123',4567) );
+				this.model = new CompareModel(new DiskModel("/home/patrick/junk/testftp_local"), new FtpModel('127.0.0.1', 'test', '123',4567) );	
 			}
 
 			return this.model.roots;

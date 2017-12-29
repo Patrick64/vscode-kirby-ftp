@@ -45,6 +45,7 @@
     "@types/mocha": "^2.2.42"
   },
   "dependencies": {
+    "fs-extra": "^5.0.0",
     "ftp": "^0.3.10"
   }
 }
