@@ -31,6 +31,12 @@ export class CompareNode {
 		return this._isFolder;
 	}
 
+	public get iconName(): string {
+		if (this.localNode && this.remoteNode) return 'equal';
+		if (!this.localNode) return 'remoteFile';
+		if (!this.remoteNode) return 'localFile';
+	}
+
 }
 
 
@@ -143,8 +149,8 @@ export class FtpTreeDataProvider implements TreeDataProvider<CompareNode>, TextD
 				title: 'Open FTP Resource'
 			},
 			iconPath: {
-				light: element.isFolder ? path.join(__filename, '..', '..', '..', 'resources', 'light', 'folder.svg') : path.join(__filename, '..', '..', '..', 'resources', 'light', 'document.svg'),
-				dark: element.isFolder ? path.join(__filename, '..', '..', '..', 'resources', 'dark', 'folder.svg') : path.join(__filename, '..', '..', '..', 'resources', 'dark', 'document.svg')
+				light: element.isFolder ? path.join(__filename, '..', '..', '..', 'resources', 'light', element.iconName + '.svg') : path.join(__filename, '..', '..', '..', 'resources', 'light', element.iconName + '.svg'),
+				dark: element.isFolder ? path.join(__filename, '..', '..', '..', 'resources', 'dark', element.iconName + '.svg') : path.join(__filename, '..', '..', '..', 'resources', 'dark', element.iconName + '.svg')
 			}
 		};
 	}
