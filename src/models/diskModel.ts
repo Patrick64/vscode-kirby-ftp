@@ -86,7 +86,7 @@ export class DiskModel {
             let promises = filenames.map(filename => fse.stat( path.join(parentDir, filename) ) );
             return Promise.all(promises).then(  stats => {
                 // var filename = list[i];
-                return stats.map( (stat,i) => new DiskNode({...stat, name:filenames[i], type: (stat.isDirectory() ? 'd' : 'f') }, parentDir ))
+                return stats.map( (stat:any,i) => new DiskNode({...stat, name:filenames[i], type: (stat.isDirectory() ? 'd' : 'f') }, parentDir ))
             });
             
         })

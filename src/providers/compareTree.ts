@@ -3,18 +3,21 @@ import * as path from 'path';
 import { IEntry } from '../models/ientry';
 import { FtpModel } from '../models/ftpModel';
 import { DiskModel } from '../models/diskModel';
+import { setTimeout } from 'timers';
 
 
 
 export class CompareNode {
 
 	private _resource: Uri;
-	private _rando:number;
+	private children:CompareNode[] = [];
+
+	// private _rando:number;
 
 	constructor(public localNode, public remoteNode, private _parent: string, private filename: string, private _isFolder: boolean) {
 		// var uri = `ftp://${host}${_parent}${entry.name}`;
 		// this._resource = Uri.parse(uri);
-		this.rando = (Date.now());
+		// this.rando = (Date.now());
 	}
 
 	public get resource(): Uri {
@@ -26,7 +29,7 @@ export class CompareNode {
 	}
 
 	public get name(): string {
-		return this.filename + this.rando;
+		return this.filename;
 	}
 
 	public get isFolder(): boolean {
@@ -34,7 +37,7 @@ export class CompareNode {
 	}
 
 	public get iconName(): string {
-		return ['equal','unequal','remoteFile','localFile'][Math.floor(Math.random()*4)];
+		// return ['equal','unequal','remoteFile','localFile'][Math.floor(Math.random()*4)];
 		if (this.localNode && this.remoteNode) {
 			if (this.localNode.size == this.remoteNode.size)  {
 				return 'equal';
@@ -46,13 +49,25 @@ export class CompareNode {
 		if (!this.remoteNode) return 'localFile';
 	}
 
+	public addChildNode(child:CompareNode) {
+		this.children.push(child);
+	}
+
+	public getChildNodes() {
+		return this.children;
+	}
+
 }
 
 
 export class CompareModel {
 	
+	private rootNode:CompareNode;
+
 	constructor(private localModel, private remoteModel, private nodeUpdated:Function) {
-		setInterval( () => { this.nodeUpdated(null); }, 1000);
+		this.rootNode = new CompareNode(null,null,"","root",true);
+		this.refreshNodeRecursively(this.rootNode);
+		// setInterval( () => { this.nodeUpdated(null); }, 1000);
 	}
 
 	public connect() {
@@ -61,17 +76,19 @@ export class CompareModel {
 	}
 
 	public get roots(): Thenable<CompareNode[]> {
-		return this.getChildren(null);
+		// return this.getChildren(null);
+		return Promise.resolve(this.rootNode.getChildNodes());
 	}
 
-	public getChildren(node: CompareNode): Thenable<CompareNode[]> {
-		var parentPath = node ? node.path : "/";
+	public refreshNodeRecursively(node:CompareNode) {
+		var isRootNode = (node == this.rootNode);
+		var parentPath = !isRootNode ? node.path : "/";
 		// if node is null then get root items, if it's not null then get all local items unless there's no localNode which means the directory doesnt exist locally
-		var getLocalNodes = node ? (node.localNode ? this.localModel.getChildren(node.localNode) : []) : this.localModel.roots;
+		var getLocalNodes = !isRootNode ? (node.localNode ? this.localModel.getChildren(node.localNode) : []) : this.localModel.roots;
 		// same as above but remote
-		var getRemoteNodes = node ? (node.remoteNode ? this.remoteModel.getChildren(node.remoteNode) : []) : this.remoteModel.roots;
+		var getRemoteNodes = !isRootNode ? (node.remoteNode ? this.remoteModel.getChildren(node.remoteNode) : []) : this.remoteModel.roots;
 		// wait for promises
-		return Promise.all([getLocalNodes,getRemoteNodes]).then(
+		Promise.all([getLocalNodes,getRemoteNodes]).then(
 			([localNodes,remoteNodes]) => {
 				// now combine the local and remote nodes into a list of compareNodes which will be shown in the tree
 				var remoteNodeByName = {},  localNodeByName = {};
@@ -96,9 +113,60 @@ export class CompareModel {
 					return l.isFolder ? -1 : 1; 
 				});
 				// compareNodes.forEach(n => { setInterval(() => { this.nodeUpdated(n); },1000) });
-				return compareNodes;
+				// return compareNodes;
+
+				// add children to node
+				compareNodes.forEach( newNode => { node.addChildNode(newNode); });
+				// get nodes in folders
+				setTimeout(()=>{
+					compareNodes.forEach( newNode => { if (newNode.isFolder) this.refreshNodeRecursively(newNode); });
+				},500);
+				
+				if (isRootNode) {
+					this.nodeUpdated(null);
+				} else {
+					this.nodeUpdated(node);
+				}
 			}
 		)
+	}
+
+	public getChildren(node: CompareNode): Thenable<CompareNode[]> {
+		return Promise.resolve(node.getChildNodes());
+		// var parentPath = node ? node.path : "/";
+		// // if node is null then get root items, if it's not null then get all local items unless there's no localNode which means the directory doesnt exist locally
+		// var getLocalNodes = node ? (node.localNode ? this.localModel.getChildren(node.localNode) : []) : this.localModel.roots;
+		// // same as above but remote
+		// var getRemoteNodes = node ? (node.remoteNode ? this.remoteModel.getChildren(node.remoteNode) : []) : this.remoteModel.roots;
+		// // wait for promises
+		// return Promise.all([getLocalNodes,getRemoteNodes]).then(
+		// 	([localNodes,remoteNodes]) => {
+		// 		// now combine the local and remote nodes into a list of compareNodes which will be shown in the tree
+		// 		var remoteNodeByName = {},  localNodeByName = {};
+		// 		remoteNodes.forEach( n => { remoteNodeByName[n.name] = n; } );
+		// 		localNodes.forEach( n => { localNodeByName[n.name] = n; } );
+		// 		var compareNodes = localNodes.map(localNode => {
+		// 			var remoteNode = remoteNodeByName[localNode.name];
+		// 			if (remoteNode) {
+		// 				return new CompareNode(localNode,remoteNode,"/",localNode.name,localNode.isFolder);
+		// 			} else {
+		// 				return new CompareNode(localNode,null,"/",localNode.name,localNode.isFolder);
+		// 			}
+		// 		});
+		// 		remoteNodes.forEach(remoteNode => {
+		// 			if (!localNodeByName[remoteNode.name]) {
+		// 				compareNodes.push(new CompareNode(null,remoteNode,"/",remoteNode.name, remoteNode.isFolder));
+		// 			}
+		// 		});
+		// 		compareNodes = compareNodes.sort((l,r) => {
+		// 			if (l.name == r.name) return 0;
+		// 			if (l.isFolder == r.isFolder) return l.name < r.name ? -1 : 1;
+		// 			return l.isFolder ? -1 : 1; 
+		// 		});
+		// 		// compareNodes.forEach(n => { setInterval(() => { this.nodeUpdated(n); },1000) });
+		// 		return compareNodes;
+		// 	}
+		// )
 	}
 
 	private sort(nodes: CompareNode[]): CompareNode[] {
@@ -177,14 +245,14 @@ export class FtpTreeDataProvider implements TreeDataProvider<CompareNode>, TextD
 					new FtpModel('127.0.0.1', 'test', '123',4567),
 					this.nodeUpdated.bind(this) );	
 			}
-			if (this.roots.length>0) 
-				return Promise.resolve(this.roots);
-			else {
+			// if (this.roots.length>0) 
+			// 	return Promise.resolve(this.roots);
+			// else {
 				return this.model.roots.then((t) => { this.roots = t; return t; } );
-			}
+			// }
 		}
 
-		return [];//this.model.getChildren(element);
+		return this.model.getChildren(element);
 	}
 
 	public nodeUpdated(node:CompareNode) {
