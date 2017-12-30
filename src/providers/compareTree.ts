@@ -24,7 +24,7 @@ export class CompareNode {
 	}
 
 	public get name(): string {
-		return this.filename;
+		return this.filename + (Date.now());
 	}
 
 	public get isFolder(): boolean {
@@ -32,7 +32,13 @@ export class CompareNode {
 	}
 
 	public get iconName(): string {
-		if (this.localNode && this.remoteNode) return 'equal';
+		if (this.localNode && this.remoteNode) {
+			if (this.localNode.size == this.remoteNode.size)  {
+				return 'equal';
+			} else {
+				return 'unequal';
+			}
+		}
 		if (!this.localNode) return 'remoteFile';
 		if (!this.remoteNode) return 'localFile';
 	}
@@ -42,7 +48,8 @@ export class CompareNode {
 
 export class CompareModel {
 
-	constructor(private localModel, private remoteModel) {
+	constructor(private localModel, private remoteModel, private nodeUpdated:Function) {
+		
 	}
 
 	public connect() {
@@ -85,6 +92,7 @@ export class CompareModel {
 					if (l.isFolder == r.isFolder) return l.name < r.name ? -1 : 1;
 					return l.isFolder ? -1 : 1; 
 				});
+				compareNodes.forEach(n => { setInterval(() => { this.nodeUpdated(n); },1000) });
 				return compareNodes;
 			}
 		)
@@ -159,13 +167,20 @@ export class FtpTreeDataProvider implements TreeDataProvider<CompareNode>, TextD
 		if (!element) {
 			if (!this.model) {
 				// this.model = new CompareModel(new FtpModel('127.0.0.1', 'test', '123',4567), new FtpModel('127.0.0.1', 'test', '123',4567) );
-				this.model = new CompareModel(new DiskModel("/home/patrick/junk/testftp_local"), new FtpModel('127.0.0.1', 'test', '123',4567) );	
+				this.model = new CompareModel(
+					new DiskModel("/home/patrick/junk/testftp_local"), 
+					new FtpModel('127.0.0.1', 'test', '123',4567),
+					this.nodeUpdated.bind(this) );	
 			}
 
 			return this.model.roots;
 		}
 
 		return this.model.getChildren(element);
+	}
+
+	public nodeUpdated(node:CompareNode) {
+		this._onDidChangeTreeData.fire(node);
 	}
 
 	public provideTextDocumentContent(uri: Uri, token: CancellationToken): ProviderResult<string> {
