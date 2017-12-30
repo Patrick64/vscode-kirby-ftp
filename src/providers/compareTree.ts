@@ -9,10 +9,12 @@ import { DiskModel } from '../models/diskModel';
 export class CompareNode {
 
 	private _resource: Uri;
+	private _rando:number;
 
 	constructor(public localNode, public remoteNode, private _parent: string, private filename: string, private _isFolder: boolean) {
 		// var uri = `ftp://${host}${_parent}${entry.name}`;
 		// this._resource = Uri.parse(uri);
+		this.rando = (Date.now());
 	}
 
 	public get resource(): Uri {
@@ -24,7 +26,7 @@ export class CompareNode {
 	}
 
 	public get name(): string {
-		return this.filename + (Date.now());
+		return this.filename + this.rando;
 	}
 
 	public get isFolder(): boolean {
@@ -32,6 +34,7 @@ export class CompareNode {
 	}
 
 	public get iconName(): string {
+		return ['equal','unequal','remoteFile','localFile'][Math.floor(Math.random()*4)];
 		if (this.localNode && this.remoteNode) {
 			if (this.localNode.size == this.remoteNode.size)  {
 				return 'equal';
@@ -47,9 +50,9 @@ export class CompareNode {
 
 
 export class CompareModel {
-
+	
 	constructor(private localModel, private remoteModel, private nodeUpdated:Function) {
-		
+		setInterval( () => { this.nodeUpdated(null); }, 1000);
 	}
 
 	public connect() {
@@ -92,7 +95,7 @@ export class CompareModel {
 					if (l.isFolder == r.isFolder) return l.name < r.name ? -1 : 1;
 					return l.isFolder ? -1 : 1; 
 				});
-				compareNodes.forEach(n => { setInterval(() => { this.nodeUpdated(n); },1000) });
+				// compareNodes.forEach(n => { setInterval(() => { this.nodeUpdated(n); },1000) });
 				return compareNodes;
 			}
 		)
@@ -146,6 +149,8 @@ export class FtpTreeDataProvider implements TreeDataProvider<CompareNode>, TextD
 	readonly onDidChangeTreeData: Event<any> = this._onDidChangeTreeData.event;
 
 	private model: CompareModel;
+	private roots=[];
+	private nodes={};
 
 	public getTreeItem(element: CompareNode): TreeItem {
 		return {
@@ -172,11 +177,14 @@ export class FtpTreeDataProvider implements TreeDataProvider<CompareNode>, TextD
 					new FtpModel('127.0.0.1', 'test', '123',4567),
 					this.nodeUpdated.bind(this) );	
 			}
-
-			return this.model.roots;
+			if (this.roots.length>0) 
+				return Promise.resolve(this.roots);
+			else {
+				return this.model.roots.then((t) => { this.roots = t; return t; } );
+			}
 		}
 
-		return this.model.getChildren(element);
+		return [];//this.model.getChildren(element);
 	}
 
 	public nodeUpdated(node:CompareNode) {

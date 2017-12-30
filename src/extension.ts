@@ -16,12 +16,12 @@ export function activate(context: vscode.ExtensionContext) {
     const compareViewProvider = new FtpTreeDataProvider();
     vscode.window.registerTreeDataProvider('compareView', compareViewProvider);
 
-    vscode.commands.registerCommand('openFtpResource', (node: CompareNode) => {
-		vscode.workspace.openTextDocument(node.resource).then(document => {
-            vscode.window.showTextDocument(document);
+    // vscode.commands.registerCommand('openFtpResource', (node: CompareNode) => {
+	// 	vscode.workspace.openTextDocument(node.resource).then(document => {
+    //         vscode.window.showTextDocument(document);
             
-		});
-	});
+	// 	});
+	// });
     
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
