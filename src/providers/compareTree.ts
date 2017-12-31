@@ -63,10 +63,11 @@ export class CompareNode {
 export class CompareModel {
 	
 	private rootNode:CompareNode;
+	private hasUserRequestedAPause: boolean = false;
 
 	constructor(private localModel, private remoteModel, private nodeUpdated:Function) {
 		this.rootNode = new CompareNode(null,null,"","root",true);
-		this.refreshNodeRecursively(this.rootNode);
+		this.refreshAll();
 		// setInterval( () => { this.nodeUpdated(null); }, 1000);
 	}
 
@@ -75,9 +76,32 @@ export class CompareModel {
 	
 	}
 
+	public userRequestsPause() {
+		this.hasUserRequestedAPause=true;
+	}
+
+	public disconnect() {
+		this.localModel.disconnect();
+		this.remoteModel.disconnect();
+	
+	}
+
+
 	public get roots(): Thenable<CompareNode[]> {
 		// return this.getChildren(null);
 		return Promise.resolve(this.rootNode.getChildNodes());
+	}
+
+	public refreshAll() {
+		console.log('FTP refresall is started.');
+		return this.connect()
+			.then(() => { 
+				return this.refreshNodeRecursively(this.rootNode); 
+			}).then(this.disconnect.bind(this))
+			.then(() => {
+				console.log('FTP refresall is done.');
+
+			}).catch(err => console.log(err));
 	}
 
 	public refreshNodeRecursively(node:CompareNode) {
@@ -88,45 +112,61 @@ export class CompareModel {
 		// same as above but remote
 		var getRemoteNodes = !isRootNode ? (node.remoteNode ? this.remoteModel.getChildren(node.remoteNode) : []) : this.remoteModel.roots;
 		// wait for promises
-		Promise.all([getLocalNodes,getRemoteNodes]).then(
+		
+		return Promise.all([getLocalNodes,getRemoteNodes]).then(
 			([localNodes,remoteNodes]) => {
-				// now combine the local and remote nodes into a list of compareNodes which will be shown in the tree
-				var remoteNodeByName = {},  localNodeByName = {};
-				remoteNodes.forEach( n => { remoteNodeByName[n.name] = n; } );
-				localNodes.forEach( n => { localNodeByName[n.name] = n; } );
-				var compareNodes = localNodes.map(localNode => {
-					var remoteNode = remoteNodeByName[localNode.name];
-					if (remoteNode) {
-						return new CompareNode(localNode,remoteNode,"/",localNode.name,localNode.isFolder);
-					} else {
-						return new CompareNode(localNode,null,"/",localNode.name,localNode.isFolder);
-					}
-				});
-				remoteNodes.forEach(remoteNode => {
-					if (!localNodeByName[remoteNode.name]) {
-						compareNodes.push(new CompareNode(null,remoteNode,"/",remoteNode.name, remoteNode.isFolder));
-					}
-				});
-				compareNodes = compareNodes.sort((l,r) => {
-					if (l.name == r.name) return 0;
-					if (l.isFolder == r.isFolder) return l.name < r.name ? -1 : 1;
-					return l.isFolder ? -1 : 1; 
-				});
-				// compareNodes.forEach(n => { setInterval(() => { this.nodeUpdated(n); },1000) });
-				// return compareNodes;
+				return new Promise((resolve,reject) => {
+					
+					// now combine the local and remote nodes into a list of compareNodes which will be shown in the tree
+					var remoteNodeByName = {},  localNodeByName = {};
+					remoteNodes.forEach( n => { remoteNodeByName[n.name] = n; } );
+					localNodes.forEach( n => { localNodeByName[n.name] = n; } );
+					var compareNodes = localNodes.map(localNode => {
+						var remoteNode = remoteNodeByName[localNode.name];
+						if (remoteNode) {
+							return new CompareNode(localNode,remoteNode,"/",localNode.name,localNode.isFolder);
+						} else {
+							return new CompareNode(localNode,null,"/",localNode.name,localNode.isFolder);
+						}
+					});
+					remoteNodes.forEach(remoteNode => {
+						if (!localNodeByName[remoteNode.name]) {
+							compareNodes.push(new CompareNode(null,remoteNode,"/",remoteNode.name, remoteNode.isFolder));
+						}
+					});
+					compareNodes = compareNodes.sort((l,r) => {
+						if (l.name == r.name) return 0;
+						if (l.isFolder == r.isFolder) return l.name < r.name ? -1 : 1;
+						return l.isFolder ? -1 : 1; 
+					});
+					// compareNodes.forEach(n => { setInterval(() => { this.nodeUpdated(n); },1000) });
+					// return compareNodes;
 
-				// add children to node
-				compareNodes.forEach( newNode => { node.addChildNode(newNode); });
-				// get nodes in folders
-				setTimeout(()=>{
-					compareNodes.forEach( newNode => { if (newNode.isFolder) this.refreshNodeRecursively(newNode); });
-				},500);
-				
-				if (isRootNode) {
-					this.nodeUpdated(null);
-				} else {
-					this.nodeUpdated(node);
-				}
+					// add children to node
+					compareNodes.forEach( newNode => { node.addChildNode(newNode); });
+					
+					// tell vscode that this node has updated
+					this.nodeUpdated(isRootNode ? null : node);
+					
+					// recursivly get nodes in folders
+					// process.nextTick(() => {
+					setTimeout(()=>{
+						// Promise.all(
+						try {
+							compareNodes
+							.filter(n => n.isFolder)
+							.reduce( (p,folderNode) => {
+								return p.then(() => { return this.refreshNodeRecursively(folderNode) } );
+							}, Promise.resolve() )
+							.then(resolve);
+						} catch(err) {
+							reject(err);
+						}
+						// ).then(resolve);
+					},this.hasUserRequestedAPause || isRootNode ? 500 : 1);
+					this.hasUserRequestedAPause=false;
+					// },reject);
+				});
 			}
 		)
 	}
@@ -248,10 +288,11 @@ export class FtpTreeDataProvider implements TreeDataProvider<CompareNode>, TextD
 			// if (this.roots.length>0) 
 			// 	return Promise.resolve(this.roots);
 			// else {
+				this.model.userRequestsPause();
 				return this.model.roots.then((t) => { this.roots = t; return t; } );
 			// }
 		}
-
+		this.model.userRequestsPause();
 		return this.model.getChildren(element);
 	}
 

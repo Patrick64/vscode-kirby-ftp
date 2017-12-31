@@ -43,6 +43,15 @@ export class DiskModel {
 	constructor(public rootDir:string) {
 	}
 
+	public connect():Thenable<void> {
+		// don't need to connect with disk so its just a dummy function
+		return Promise.resolve();
+	}
+
+	public disconnect() {
+
+	}
+
 	// public connect(): Thenable<Client> {
 	// 	return new Promise((c, e) => {
 	// 		const client = new Client();

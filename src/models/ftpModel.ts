@@ -39,22 +39,24 @@ export class FtpNode {
 }
 
 export class FtpModel {
+	
+	private client:Client;
 
 	constructor(private host: string, private user: string, private password: string, private port: number) {
 	}
 
 	public connect(): Thenable<Client> {
 		return new Promise((c, e) => {
-			const client = new Client();
-			client.on('ready', () => {
-				c(client);
+			this.client = new Client();
+			this.client.on('ready', () => {
+				c(this.client);
 			});
 
-			client.on('error', error => {
+			this.client.on('error', error => {
 				e('Error while connecting: ' + error.message);
 			})
 
-			client.connect({
+			this.client.connect({
 				host: this.host,
 				user: this.user,
 				password: this.password,
@@ -63,36 +65,45 @@ export class FtpModel {
 		});
 	}
 
+	public disconnect() {
+		this.client.end();
+	}
+	
+
 	public get roots(): Thenable<FtpNode[]> {
-		return this.connect().then(client => {
-			return new Promise((c, e) => {
-				client.list((err, list) => {
-					if (err) {
-						return e(err);
-					}
+		
+		return new Promise((c, e) => {
+			this.client.list((err, list) => {
+				if (err) {
+					return e(err);
+				}
 
-					client.end();
+				
 
-					return c(this.sort(list.map(entry => new FtpNode(entry, this.host, '/'))));
-				});
+				return c(this.sort(list.map(entry => new FtpNode(entry, this.host, '/'))));
 			});
 		});
+	
 	}
 
 	public getChildren(node: FtpNode): Thenable<FtpNode[]> {
-		return this.connect().then(client => {
+		
 			return new Promise((c, e) => {
-				client.list(node.path, (err, list) => {
-					if (err) {
-						return e(err);
-					}
+				try {
+					this.client.list(node.path, (err, list) => {
+						if (err) {
+							return e(err);
+						}
 
-					client.end();
+						
 
-					return c(this.sort(list.map(entry => new FtpNode(entry, this.host, node.path))));
-				});
+						return c(this.sort(list.map(entry => new FtpNode(entry, this.host, node.path))));
+					});
+				} catch(err) { 
+					e(err); 
+				}
 			});
-		});
+		
 	}
 
 	private sort(nodes: FtpNode[]): FtpNode[] {
