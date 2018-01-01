@@ -52,6 +52,20 @@ export class DiskModel {
 
 	}
 
+	public getContentFromNode(node:DiskNode):Thenable<string> {
+		return new Promise((c, e) => {
+			// var filepath = path.join(this.rootDir, node.path);
+			fse.readFile(node.path, 'utf8', function (err,data) {
+				if (err) {
+				  e(err);
+				}
+				c(data);
+			  });
+
+		});
+	}
+
+
 	// public connect(): Thenable<Client> {
 	// 	return new Promise((c, e) => {
 	// 		const client = new Client();

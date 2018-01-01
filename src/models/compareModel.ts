@@ -53,28 +53,36 @@ export class CompareNode {
 
 	
 
-	public doComparison(remoteModel, localModel):Thenable<void> {
-		return new Promise((resolve,reject) => {
-			if (!this.localNode && !this.remoteNode) {
-				this.nodeState = CompareNodeState.error;
-				resolve();
-			} else	if (!this.localNode) {
-				this.nodeState = CompareNodeState.remoteFile;
-				resolve();
-			} else if (!this.remoteNode) {
-				this.nodeState = CompareNodeState.localFile;
-				resolve();
-			} else if (this.localNode.size != this.remoteNode.size)  {
-				this.nodeState = CompareNodeState.unequal;
-				resolve();
-			} else {
-				setInterval( ()=>{  
-					this.nodeState = CompareNodeState.equal;
-					resolve(); 
-				}, 1000 );
-			}
-			
-		})
+	public doComparison(localModel, remoteModel):Thenable<void> {
+		
+        if (!this.localNode && !this.remoteNode) {
+            this.nodeState = CompareNodeState.error;
+        } else	if (!this.localNode) {
+            this.nodeState = CompareNodeState.remoteFile;
+        } else if (!this.remoteNode) {
+            this.nodeState = CompareNodeState.localFile;
+        } else if (this.isFolder) {
+            this.nodeState = CompareNodeState.equal;
+        } else if (this.localNode.size != this.remoteNode.size)  {
+            this.nodeState = CompareNodeState.unequal;
+        } else {
+            // setInterval( ()=>{  
+            return Promise.all([localModel.getContentFromNode(this.localNode),remoteModel.getContentFromNode(this.remoteNode)]).then(([localText,remoteText]) => {
+                if (localText == remoteText) {
+                    this.nodeState = CompareNodeState.equal;
+                } else {
+                    this.nodeState = CompareNodeState.unequal;
+                } 
+            }).catch((err)=>{
+                this.nodeState = CompareNodeState.error;
+                console.error(err);
+            });
+                
+                
+            // }, 1000 );
+        }
+        return Promise.resolve();
+    
 		
 	}
 

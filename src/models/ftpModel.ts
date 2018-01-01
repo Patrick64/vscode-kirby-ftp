@@ -120,6 +120,28 @@ export class FtpModel {
 		});
 	}
 
+	public getContentFromNode(node:FtpNode):Thenable<string> {
+		return new Promise((c, e) => {
+			this.client.get(node.path, (err, stream) => {
+				if (err) {
+					return e(err);
+				}
+
+				let string = ''
+				stream.on('data', function (buffer) {
+					if (buffer) {
+						var part = buffer.toString();
+						string += part;
+					}
+				});
+
+				stream.on('end', function () {
+					c(string);
+				});
+			});
+		});
+	}
+
 	public getContent(resource: Uri): Thenable<string> {
 		return this.connect().then(client => {
 			return new Promise((c, e) => {
