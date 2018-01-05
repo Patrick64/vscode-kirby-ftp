@@ -3,25 +3,31 @@ import * as path from 'path';
 import { setTimeout, setInterval } from 'timers';
 
 export enum CompareNodeState {
-	loading,
-	error,
-	equal,
-	conflict,
-	localFile,
-	remoteFile,
-	unequal,
-	remoteChanged,
-	localChanged
+	
+	equal = 200,
+	localOnly = 300,
+	remoteOnly = 400,
+	remoteChanged = 500,
+	localChanged = 600,
+	unequal = 700,
+	bothChanged = 800,
+	conflict = 900,
+	error = 1000,
+	loading = 1000
 }
+
+
+
 
 export class CompareNode {
 
 	private _resource: Uri;
 	private children:CompareNode[] = [];
-	private nodeState: CompareNodeState = CompareNodeState.loading;
+	public nodeState: CompareNodeState = CompareNodeState.loading;
+	
 	// private _rando:number;
 
-	constructor(public localNode, public remoteNode, private _parent: string, private filename: string, private _isFolder: boolean) {
+	constructor(public localNode, public remoteNode, private _parent: string, private filename: string, private _isFolder: boolean, private parentNode: CompareNode) {
 		// var uri = `ftp://${host}${_parent}${entry.name}`;
 		// this._resource = Uri.parse(uri);
 		// this.rando = (Date.now());
@@ -58,11 +64,11 @@ export class CompareNode {
         if (!this.localNode && !this.remoteNode) {
             this.nodeState = CompareNodeState.error;
         } else	if (!this.localNode) {
-            this.nodeState = CompareNodeState.remoteFile;
+            this.nodeState = CompareNodeState.remoteOnly;
         } else if (!this.remoteNode) {
-            this.nodeState = CompareNodeState.localFile;
+            this.nodeState = CompareNodeState.localOnly;
         } else if (this.isFolder) {
-            this.nodeState = CompareNodeState.equal;
+            this.nodeState = CompareNodeState.loading; // leave until updateFolderState is called.
         } else if (this.localNode.size != this.remoteNode.size)  {
             this.nodeState = CompareNodeState.unequal;
         } else {
@@ -88,13 +94,34 @@ export class CompareNode {
 
 	public get iconName(): string {
 
+		if (this.isFolder) {
+			if (!this.localNode && !this.remoteNode) {
+				return 'error';
+			} else	if (!this.localNode) {
+				return 'folder-remote';
+			} else if (!this.remoteNode) {
+				return 'folder-local';
+			} else {
+				switch (this.nodeState) {
+					case CompareNodeState.loading: return 'loading'; 
+					case CompareNodeState.error: return 'error'; 
+					case CompareNodeState.equal: return 'folder-equal'; 
+					case CompareNodeState.conflict: return 'folder-conflict'; 
+					case CompareNodeState.localOnly: return 'folder-changed'; 
+					case CompareNodeState.remoteOnly: return 'folder-changed'; 
+					case CompareNodeState.unequal: return 'folder-conflict'; 
+					case CompareNodeState.remoteChanged: return 'folder-changed'; 
+					case CompareNodeState.localChanged: return 'folder-changed'; 
+				}
+			}
+		}
 		switch (this.nodeState) {
 			case CompareNodeState.loading: return 'loading'; 
 			case CompareNodeState.error: return 'error'; 
 			case CompareNodeState.equal: return 'equal'; 
 			case CompareNodeState.conflict: return 'conflict'; 
-			case CompareNodeState.localFile: return 'localFile'; 
-			case CompareNodeState.remoteFile: return 'remoteFile'; 
+			case CompareNodeState.localOnly: return 'localFile'; 
+			case CompareNodeState.remoteOnly: return 'remoteFile'; 
 			case CompareNodeState.unequal: return 'unequal'; 
 			case CompareNodeState.remoteChanged: return 'remoteChanged'; 
 			case CompareNodeState.localChanged: return 'localChange'; 
@@ -110,6 +137,24 @@ export class CompareNode {
 		return this.children;
 	}
 
+	public updateFolderState() {
+		var newState:CompareNodeState = null;
+		if (!this.localNode && !this.remoteNode) {
+            this.nodeState = CompareNodeState.error;
+        } else	if (!this.localNode) {
+            this.nodeState = CompareNodeState.remoteOnly;
+        } else if (!this.remoteNode) {
+			this.nodeState = CompareNodeState.localOnly;
+		} else if (this.children.length==0) {
+			this.nodeState = CompareNodeState.equal;
+		} else {
+			this.nodeState = this.children.reduce((newState: CompareNodeState, childNode: CompareNode) => {
+				if (childNode.nodeState > newState) return childNode.nodeState; else return newState;
+			}, 0);
+		}
+		if (this._parent) this.parentNode.updateFolderState();
+	}
+
 }
 
 
@@ -119,7 +164,7 @@ export class CompareModel {
 	private hasUserRequestedAPause: boolean = false;
 
 	constructor(private localModel, private remoteModel, private nodeUpdated:Function) {
-		this.rootNode = new CompareNode(null,null,"","root",true);
+		this.rootNode = new CompareNode(null,null,"","root",true,null);
 		this.refreshAll();
 		// setInterval( () => { this.nodeUpdated(null); }, 1000);
 	}
@@ -176,14 +221,14 @@ export class CompareModel {
 				var compareNodes = localNodes.map(localNode => {
 					var remoteNode = remoteNodeByName[localNode.name];
 					if (remoteNode) {
-						return new CompareNode(localNode,remoteNode,"/",localNode.name,localNode.isFolder);
+						return new CompareNode(localNode,remoteNode,"/",localNode.name,localNode.isFolder,node);
 					} else {
-						return new CompareNode(localNode,null,"/",localNode.name,localNode.isFolder);
+						return new CompareNode(localNode,null,"/",localNode.name,localNode.isFolder,node);
 					}
 				});
 				remoteNodes.forEach(remoteNode => {
 					if (!localNodeByName[remoteNode.name]) {
-						compareNodes.push(new CompareNode(null,remoteNode,"/",remoteNode.name, remoteNode.isFolder));
+						compareNodes.push(new CompareNode(null,remoteNode,"/",remoteNode.name, remoteNode.isFolder,node));
 					}
 				});
 				compareNodes = compareNodes.sort((l,r) => {
@@ -225,6 +270,13 @@ export class CompareModel {
 						.reduce( (p:any,folderNode:CompareNode) => {
 							return p.then(() => { return this.refreshNodeRecursively(folderNode) } );
 						}, Promise.resolve() )
+						.then(() => {
+							// we've finished with updating the folders so look at the children to see what state the folder is
+							if (node.isFolder) {
+								node.updateFolderState();
+								this.nodeUpdated(node);
+							}
+					 	})
 						.then(resolve);
 					} catch(err) {
 						reject(err);

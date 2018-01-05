@@ -1,0 +1,10 @@
+https://www.npmjs.com/package/node-diff3
+
+https://www.npmjs.com/package/diff
+
+var nodeDiff3 = require("node-diff3")
+
+nodeDiff3.diff3Merge(
+["a","b","c","d"],
+["a","c","d"],
+["a","c","f"])
