@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="16"
+   height="16"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="file-remote.svg">
+  <metadata
+     id="metadata14">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs12" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1053"
+     id="namedview10"
+     showgrid="false"
+     inkscape:zoom="14.75"
+     inkscape:cx="-8.5084746"
+     inkscape:cy="8"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2" />
+  <style
+     type="text/css"
+     id="style4">.icon-canvas-transparent{opacity:0;fill:#F6F6F6;} .icon-vs-out{opacity:0;fill:#F6F6F6;} .icon-vs-fg{opacity:0;fill:#F0EFF1;} .icon-folder{fill:#C5C5C5;}</style>
+  <path
+     class="icon-canvas-transparent"
+     d="M16 16h-16v-16h16v16z"
+     id="canvas" />
+  <path
+     class="icon-vs-out"
+     d="M16 2.5v10c0 .827-.673 1.5-1.5 1.5h-11.996c-.827 0-1.5-.673-1.5-1.5v-8c0-.827.673-1.5 1.5-1.5h2.886l1-2h8.11c.827 0 1.5.673 1.5 1.5z"
+     id="outline" />
+  <path
+     class="icon-vs-fg"
+     d="M14 3v1h-6.5l.5-1h6z"
+     id="iconFg" />
+  <g
+     id="g4201"
+     transform="matrix(0.22711865,0,0,0.22711865,5.1359946,6.2106292)">
+    <path
+       id="path3"
+       d="m 32.613169,3.9830508 c -0.115,-8.699 -7.193,-15.9999998 -15.919,-15.9999998 -5.559,0 -10.7789995,3.0049998 -13.6609995,7.3359998 -1.266,-0.843 -2.78700001,-1.336 -4.423,-1.336 -4.418,0 -8,3.582 -8,8 0,0.153 0.014,0.302 0.023,0.454 -0.01,0.182 -0.023,0.366 -0.023,0.546 -3.9880005,1.912 -7.0000005,6.457 -7.0000005,11.1550002 0,6.515 5.33,11.845 11.8450005,11.845 l 24.5069995,0 c 0.138,0 0.272,-0.016 0.408,-0.021 0.137,0.005 0.271,0.021 0.409,0.021 l 9.803,0 c 6.065,0 11.028,-4.963 11.028,-11.028 0,-5.3710002 -3.894,-10.0110002 -8.997,-10.9720002 z"
+       style="fill:#7fabda;stroke:#7383bf;stroke-width:2;stroke-linecap:round;stroke-miterlimit:10"
+       inkscape:connector-curvature="0" />
+    <path
+       id="path5"
+       d="m 32.613169,3.9830508 c 0,0 -2.535,-0.375 -5.003,0"
+       style="fill:#7fabda;stroke:#7383bf;stroke-width:2;stroke-linecap:round;stroke-miterlimit:10"
+       inkscape:connector-curvature="0" />
+    <path
+       id="path7"
+       d="m -9.3898305,1.9830508 c 0,-4.418 3.582,-8 8,-8 4.418,0 8,3.582 8,8"
+       style="fill:#7fabda;stroke:#7383bf;stroke-width:2;stroke-linecap:round;stroke-miterlimit:10"
+       inkscape:connector-curvature="0" />
+    <g
+       id="g9"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g11"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g13"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g15"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g17"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g19"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g21"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g23"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g25"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g27"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g29"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g31"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g33"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g35"
+       transform="translate(-17.389831,-23.016949)" />
+    <g
+       id="g37"
+       transform="translate(-17.389831,-23.016949)" />
+  </g>
+</svg>

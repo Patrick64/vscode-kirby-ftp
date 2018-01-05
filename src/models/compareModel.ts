@@ -120,8 +120,8 @@ export class CompareNode {
 			case CompareNodeState.error: return 'error'; 
 			case CompareNodeState.equal: return 'equal'; 
 			case CompareNodeState.conflict: return 'conflict'; 
-			case CompareNodeState.localOnly: return 'localFile'; 
-			case CompareNodeState.remoteOnly: return 'remoteFile'; 
+			case CompareNodeState.localOnly: return 'file-local'; 
+			case CompareNodeState.remoteOnly: return 'file-remote'; 
 			case CompareNodeState.unequal: return 'unequal'; 
 			case CompareNodeState.remoteChanged: return 'remoteChanged'; 
 			case CompareNodeState.localChanged: return 'localChange'; 
