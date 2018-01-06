@@ -8,3 +8,42 @@ nodeDiff3.diff3Merge(
 ["a","b","c","d"],
 ["a","c","d"],
 ["a","c","f"])
+
+Make menu for files/folders:
+    Refresh
+    
+    Upload/Download on file
+    Upload/Download on folder: Upload/Download changed files
+    Mirror to remote
+    Mirror to local
+
+
+
+Add config file
+IF there is no config file have message on treeview that opens the config file
+Allow for more than one ftp profile
+add sftp
+Compare file view
+
+Future:
+    Add kirby-ftp folder to .vscode
+    add a gitignore and htaccess that blocks access
+    Sqlite database stores state of files:
+        Wehn they were last updated on local/remote
+        The size&date of when files were last the same (since last sync) to tell which one has changed
+    Store different versions of text files:
+        Maybe store as list of guids ie .kirby-ftp-ba5c5ba5bb5ca5 
+        Databse stores file hash so it doesn't create lots of the same file
+        Maybe compress them?
+    If files have the same size&modified date as they have in the database then there's no need to compare them just go off the state in the database
+    Show files that have changed on remote XOR local as syncable
+    Show files that have changed on remote AND local as conflict (unless they can be automerged with node-diff3, then show as automergable)
+    Automerge using node-diff3
+    Open 3-way merge
+    Store backups
+
+
+    Add options:
+    Sync local
+    Sync remote
+    Sync both
