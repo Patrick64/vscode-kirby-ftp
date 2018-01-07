@@ -24,6 +24,9 @@ IF there is no config file have message on treeview that opens the config file
 Allow for more than one ftp profile
 add sftp
 Compare file view
+Use this for config file https://www.npmjs.com/package/comment-json
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Future:
     Add kirby-ftp folder to .vscode

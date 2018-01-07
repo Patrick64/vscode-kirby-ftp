@@ -12,15 +12,33 @@
   ],
   "activationEvents": [
     "onCommand:extension.sayHello",
-    "onView:compareView"
+    "onView:compareView",
+    "activationEvents",
+    "workspaceContains:.vscode/kirby-ftp/.kirby-ftp-config" ,
+    "onCommand:kirby.openConfig" 
   ],
   "main": "./out/extension",
+
   "contributes": {
     "commands": [
       {
         "command": "extension.sayHello",
         "title": "Hello World"
-      }
+      },
+      {
+        "command": "kirby.openConfig",
+        "title": "Setup",
+        "category": "Kirby FTP"
+      },
+      {
+				"command": "compareView.refreshEntry",
+				"title": "Refresh All",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+        },
+        "category": "Kirby FTP"
+			}
     ],
     "views": {
       "explorer": [
@@ -28,6 +46,15 @@
           "id": "compareView",
           "name": "Kirby FTP"
         }
+      ]
+    },
+    "menus": {
+			"view/title": [
+        {
+					"command": "compareView.refreshEntry",
+					
+					"group": "navigation"
+				}
       ]
     }
   },

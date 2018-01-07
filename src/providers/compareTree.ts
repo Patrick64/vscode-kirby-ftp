@@ -58,4 +58,10 @@ export class FtpTreeDataProvider implements TreeDataProvider<CompareNode>, TextD
 	public provideTextDocumentContent(uri: Uri, token: CancellationToken): ProviderResult<string> {
 		return this.model.getContent(uri);
 	}
+
+	public refresh() {
+		if (this.model) {
+			this.model.refreshAll();
+		}
+	}
 }

@@ -4,6 +4,7 @@
 import * as vscode from 'vscode';
 //import { CompareTreeDataProvider } from './providers/compareTree';
 import { FtpTreeDataProvider } from './providers/compareTree';
+import { editConfig } from './modules/config';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -15,7 +16,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     const compareViewProvider = new FtpTreeDataProvider();
     vscode.window.registerTreeDataProvider('compareView', compareViewProvider);
+    vscode.commands.registerCommand('compareView.refreshEntry', () => compareViewProvider.refresh());
+    vscode.commands.registerCommand("kirby.openConfig", () => {
+        editConfig();
 
+    } );
     // vscode.commands.registerCommand('openFtpResource', (node: CompareNode) => {
 	// 	vscode.workspace.openTextDocument(node.resource).then(document => {
     //         vscode.window.showTextDocument(document);
