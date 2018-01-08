@@ -5,17 +5,32 @@ import { FtpModel } from '../models/ftpModel';
 import { DiskModel } from '../models/diskModel';
 import { setTimeout, setInterval } from 'timers';
 import { CompareModel, CompareNode } from '../models/compareModel';
+import { ITreeNode } from '../nodes/iTreeNode';
+import { ProfileNode } from '../nodes/profileNode';
+import { ISettings } from '../modules/config';
 
-export class FtpTreeDataProvider implements TreeDataProvider<CompareNode>, TextDocumentContentProvider {
+export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode>, TextDocumentContentProvider {
 
 	private _onDidChangeTreeData: EventEmitter<any> = new EventEmitter<any>();
 	readonly onDidChangeTreeData: Event<any> = this._onDidChangeTreeData.event;
 
-	private model: CompareModel;
+	// private model: CompareModel;
+	private profileNodes: ProfileNode[];
 	private roots=[];
 	private nodes={};
 
-	public getTreeItem(element: CompareNode): TreeItem {
+	public loadSettingsProfiles(profiles:ISettings[]) {
+		try {
+			this.profileNodes = profiles.map(p => new ProfileNode(p,this.nodeUpdated.bind(this)) );
+			this.nodeUpdated(null); 
+			return Promise.all(this.profileNodes.map(n => n.refreshAll())).then(() => {this.nodeUpdated(null); });
+		} catch (err) {
+			console.log(err);
+			
+		}
+	}
+
+	public getTreeItem(element: ITreeNode): TreeItem {
 		return {
 			label: element.name,
 			collapsibleState: element.isFolder ? TreeItemCollapsibleState.Collapsed : void 0,
@@ -31,37 +46,41 @@ export class FtpTreeDataProvider implements TreeDataProvider<CompareNode>, TextD
 		};
 	}
 
-	public getChildren(element?: CompareNode): CompareNode[] | Thenable<CompareNode[]> {
+	public getChildren(element?: ITreeNode): ITreeNode[] | Thenable<ITreeNode[]> {
 		if (!element) {
-			if (!this.model) {
+			return Promise.resolve(this.profileNodes);
+				
 				// this.model = new CompareModel(new FtpModel('127.0.0.1', 'test', '123',4567), new FtpModel('127.0.0.1', 'test', '123',4567) );
-				this.model = new CompareModel(
-					new DiskModel("/home/patrick/junk/testftp_local"), 
-					new FtpModel('127.0.0.1', 'test', '123',4567),
-					this.nodeUpdated.bind(this) );	
-			}
+				// this.model = new CompareModel(
+				// 	new DiskModel("/home/patrick/junk/testftp_local"), 
+				// 	new FtpModel('127.0.0.1', 'test', '123',4567),
+				// 	this.nodeUpdated.bind(this) );	
+			
 			// if (this.roots.length>0) 
 			// 	return Promise.resolve(this.roots);
 			// else {
-				this.model.userRequestsPause();
-				return this.model.roots.then((t) => { this.roots = t; return t; } );
+				// this.model.userRequestsPause();
+				// return this.model.roots.then((t) => { this.roots = t; return t; } );
 			// }
+		} else {
+			return element.getChildNodes();
+			// return this.model.getChildren(element);
 		}
-		this.model.userRequestsPause();
-		return this.model.getChildren(element);
 	}
 
-	public nodeUpdated(node:CompareNode) {
+	
+
+	public nodeUpdated(node:ITreeNode) {
 		this._onDidChangeTreeData.fire(node);
 	}
 
 	public provideTextDocumentContent(uri: Uri, token: CancellationToken): ProviderResult<string> {
-		return this.model.getContent(uri);
+		// return this.model.getContent(uri);
 	}
 
 	public refresh() {
-		if (this.model) {
-			this.model.refreshAll();
-		}
+		// if (this.model) {
+		// 	this.model.refreshAll();
+		// }
 	}
 }

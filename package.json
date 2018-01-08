@@ -14,11 +14,10 @@
     "onCommand:extension.sayHello",
     "onView:compareView",
     "activationEvents",
-    "workspaceContains:.vscode/kirby-ftp/.kirby-ftp-config" ,
-    "onCommand:kirby.openConfig" 
+    "workspaceContains:.vscode/kirby-ftp/.kirby-ftp-config",
+    "onCommand:kirby.openConfig"
   ],
   "main": "./out/extension",
-
   "contributes": {
     "commands": [
       {
@@ -31,14 +30,14 @@
         "category": "Kirby FTP"
       },
       {
-				"command": "compareView.refreshEntry",
-				"title": "Refresh All",
-				"icon": {
-					"light": "resources/light/refresh.svg",
-					"dark": "resources/dark/refresh.svg"
+        "command": "compareView.refreshEntry",
+        "title": "Refresh All",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
         },
         "category": "Kirby FTP"
-			}
+      }
     ],
     "views": {
       "explorer": [
@@ -49,12 +48,11 @@
       ]
     },
     "menus": {
-			"view/title": [
+      "view/title": [
         {
-					"command": "compareView.refreshEntry",
-					
-					"group": "navigation"
-				}
+          "command": "compareView.refreshEntry",
+          "group": "navigation"
+        }
       ]
     }
   },
@@ -73,6 +71,7 @@
   },
   "dependencies": {
     "fs-extra": "^5.0.0",
-    "ftp": "^0.3.10"
+    "ftp": "^0.3.10",
+    "path-is-inside": "^1.0.2"
   }
 }

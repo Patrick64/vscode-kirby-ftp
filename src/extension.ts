@@ -4,7 +4,8 @@
 import * as vscode from 'vscode';
 //import { CompareTreeDataProvider } from './providers/compareTree';
 import { FtpTreeDataProvider } from './providers/compareTree';
-import { editConfig } from './modules/config';
+import { editConfig, getAllProfiles } from './modules/config';
+import { ProfileNode } from './nodes/profileNode';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -21,6 +22,13 @@ export function activate(context: vscode.ExtensionContext) {
         editConfig();
 
     } );
+    getAllProfiles().then((profiles) => {
+        compareViewProvider.loadSettingsProfiles(profiles);
+        return Promise.resolve();
+    })
+    .catch(error => {
+        vscode.window.showErrorMessage(error);
+    });
     // vscode.commands.registerCommand('openFtpResource', (node: CompareNode) => {
 	// 	vscode.workspace.openTextDocument(node.resource).then(document => {
     //         vscode.window.showTextDocument(document);

@@ -1,6 +1,8 @@
 import { ExtensionContext, TreeDataProvider, EventEmitter, TreeItem, Event, window, TreeItemCollapsibleState, Uri, commands, workspace, TextDocumentContentProvider, CancellationToken, ProviderResult } from 'vscode';
 import * as path from 'path';
 import { setTimeout, setInterval } from 'timers';
+import { ITreeNode } from '../nodes/iTreeNode';
+import * as vscode from 'vscode';
 
 export enum CompareNodeState {
 	
@@ -13,21 +15,23 @@ export enum CompareNodeState {
 	bothChanged = 800,
 	conflict = 900,
 	error = 1000,
-	loading = 1000
+	loading = 1100
 }
 
 
 
 
-export class CompareNode {
+export class CompareNode implements ITreeNode {
 
 	private _resource: Uri;
 	private children:CompareNode[] = [];
+	private profiles:ITreeNode;
 	public nodeState: CompareNodeState = CompareNodeState.loading;
 	
 	// private _rando:number;
 
-	constructor(public localNode, public remoteNode, private _parent: string, private filename: string, private _isFolder: boolean, private parentNode: CompareNode) {
+	constructor(public localNode, public remoteNode, private _parent: string, private filename: string, private _isFolder: boolean, private parentNode: ITreeNode, public model:CompareModel) {
+		
 		// var uri = `ftp://${host}${_parent}${entry.name}`;
 		// this._resource = Uri.parse(uri);
 		// this.rando = (Date.now());
@@ -134,7 +138,7 @@ export class CompareNode {
 	}
 
 	public getChildNodes() {
-		return this.children;
+		return Promise.resolve(this.children);
 	}
 
 	public updateFolderState() {
@@ -164,8 +168,8 @@ export class CompareModel {
 	private hasUserRequestedAPause: boolean = false;
 
 	constructor(private localModel, private remoteModel, private nodeUpdated:Function) {
-		this.rootNode = new CompareNode(null,null,"","root",true,null);
-		this.refreshAll();
+		this.rootNode = new CompareNode(null,null,"","root",true,null, this);
+		//this.refreshAll();
 		// setInterval( () => { this.nodeUpdated(null); }, 1000);
 	}
 
@@ -185,9 +189,9 @@ export class CompareModel {
 	}
 
 
-	public get roots(): Thenable<CompareNode[]> {
+	public get roots(): Thenable<ITreeNode[]> {
 		// return this.getChildren(null);
-		return Promise.resolve(this.rootNode.getChildNodes());
+		return this.rootNode.getChildNodes());
 	}
 
 	public refreshAll() {
@@ -199,10 +203,13 @@ export class CompareModel {
 			.then(() => {
 				console.log('FTP refresall is done.');
 
-			}).catch(err => console.log(err));
+			}).catch(err => {
+				console.log(err)
+				vscode.window.showErrorMessage("Kirby FTP: " + err);
+			});
 	}
 
-	public refreshNodeRecursively(node:CompareNode) {
+	public refreshNodeRecursively(node:CompareNode, retries = 0) {
 		var isRootNode = (node == this.rootNode);
 		var parentPath = !isRootNode ? node.path : "/";
 		// if node is null then get root items, if it's not null then get all local items unless there's no localNode which means the directory doesnt exist locally
@@ -221,14 +228,14 @@ export class CompareModel {
 				var compareNodes = localNodes.map(localNode => {
 					var remoteNode = remoteNodeByName[localNode.name];
 					if (remoteNode) {
-						return new CompareNode(localNode,remoteNode,"/",localNode.name,localNode.isFolder,node);
+						return new CompareNode(localNode,remoteNode,"/",localNode.name,localNode.isFolder,node,this);
 					} else {
-						return new CompareNode(localNode,null,"/",localNode.name,localNode.isFolder,node);
+						return new CompareNode(localNode,null,"/",localNode.name,localNode.isFolder,node,this);
 					}
 				});
 				remoteNodes.forEach(remoteNode => {
 					if (!localNodeByName[remoteNode.name]) {
-						compareNodes.push(new CompareNode(null,remoteNode,"/",remoteNode.name, remoteNode.isFolder,node));
+						compareNodes.push(new CompareNode(null,remoteNode,"/",remoteNode.name, remoteNode.isFolder,node,this));
 					}
 				});
 				compareNodes = compareNodes.sort((l,r) => {
@@ -286,7 +293,14 @@ export class CompareModel {
 				this.hasUserRequestedAPause=false;
 				// },reject);
 			}); // end promise
-		}); // end then 
+		}) // end then 
+		.catch(err => {
+			console.error(err)
+			if (retries<5) 
+				this.refreshNodeRecursively(node,retries+1);
+			else
+				vscode.window.showErrorMessage("Remote listing failed." );
+		});
 		
 	}
 
