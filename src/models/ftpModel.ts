@@ -80,7 +80,9 @@ export class FtpModel {
 
 				
 
-				return c(this.sort(list.map(entry => new FtpNode(entry, this.host, '/'))));
+				return c(this.sort(
+					list.filter(entry => entry.name != "." && entry.name != "..")
+					.map(entry => new FtpNode(entry, this.host, '/'))));
 			});
 		});
 	
@@ -97,7 +99,10 @@ export class FtpModel {
 
 						
 
-						return c(this.sort(list.map(entry => new FtpNode(entry, this.host, node.path))));
+						return c(
+							this.sort(
+								list.filter(entry => entry.name != "." && entry.name != "..")
+								.map(entry => new FtpNode(entry, this.host, node.path))));
 					});
 				} catch(err) { 
 					e(err); 
