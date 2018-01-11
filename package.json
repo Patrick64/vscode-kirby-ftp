@@ -30,6 +30,11 @@
         "category": "Kirby FTP"
       },
       {
+				"command": "kirby.uploadFile",
+        "title": "Upload File",
+        "category": "Kirby FTP"
+			},
+      {
         "command": "compareView.refreshEntry",
         "title": "Refresh All",
         "icon": {
@@ -53,6 +58,25 @@
           "command": "compareView.refreshEntry",
           "group": "navigation"
         }
+      ],
+      "view/item/context": [
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == file_equal" },
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == file_localOnly" },
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == file_remoteChanged" },
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == file_localChanged" },
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == file_unequal" },
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == file_bothChanged" },
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == file_conflict" },
+
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == folder_equal" },
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == folder_localOnly" },
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == folder_remoteChanged" },
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == folder_localChanged" },
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == folder_unequal" },
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == folder_bothChanged" },
+        {"command": "kirby.uploadFile", "when": "view == compareView && viewItem == folder_conflict" }
+        
+
       ]
     }
   },

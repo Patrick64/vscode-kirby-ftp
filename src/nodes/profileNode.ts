@@ -12,7 +12,7 @@ export class ProfileNode implements ITreeNode{
     private children:CompareNode[] = [];
     private compareModel:CompareModel;
     private nodeName:string;
-
+    contextValue = "profile";
     constructor(private profileSettings:ISettings,private nodeUpdated:Function) {
         var workspaceFolder = profileSettings.workspaceFolder;
         var settings = profileSettings.settings;

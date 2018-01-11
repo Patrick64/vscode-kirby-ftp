@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import { FtpTreeDataProvider } from './providers/compareTree';
 import { editConfig, getAllProfiles } from './modules/config';
 import { ProfileNode } from './nodes/profileNode';
+import { ITreeNode } from './nodes/iTreeNode';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -22,13 +23,27 @@ export function activate(context: vscode.ExtensionContext) {
         editConfig();
 
     } );
-    getAllProfiles().then((profiles) => {
+    vscode.commands.registerCommand('kirby.uploadFile', (node: ITreeNode) => {
+		// vscode.workspace.openTextDocument(node.resource).then(document => {
+		// 	vscode.window.showTextDocument(document);
+        // });
+        vscode.window.showInformationMessage("todo: Upload file ");
+	});
+    getAllProfiles().then((profiles):Promise<void> => {
         compareViewProvider.loadSettingsProfiles(profiles);
         return Promise.resolve();
-    })
-    .catch(error => {
+    }).catch(error => {
         vscode.window.showErrorMessage(error);
     });
+
+    var promise1:Promise<void> = new Promise(function(resolve, reject) {
+        throw 'Uh-oh!';
+      });
+      
+      promise1.catch(function(error) {
+        console.log(error);
+      });
+
     // vscode.commands.registerCommand('openFtpResource', (node: CompareNode) => {
 	// 	vscode.workspace.openTextDocument(node.resource).then(document => {
     //         vscode.window.showTextDocument(document);

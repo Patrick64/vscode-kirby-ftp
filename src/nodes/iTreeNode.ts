@@ -10,5 +10,6 @@ export interface ITreeNode {
     iconName: string;
     updateFolderState();
     getChildNodes(): Thenable<ITreeNode[]>;
+    contextValue:string;
 
 }

@@ -111,7 +111,7 @@ export function editConfig() {
     }
   }
 
-  export function getAllProfiles():Thenable<ISettings[]> {
+  export function getAllProfiles():Promise<ISettings[]> {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     // var profileSettings: ISettings[];
 

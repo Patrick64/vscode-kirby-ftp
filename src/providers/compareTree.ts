@@ -35,14 +35,15 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode>, TextDoc
 			label: element.name,
 			collapsibleState: element.isFolder ? TreeItemCollapsibleState.Collapsed : void 0,
 			command: element.isFolder ? void 0 : {
-				command: 'openFtpResource',
+				command: 'uploadFile',
 				arguments: [element],
-				title: 'Open FTP Resource'
+				title: 'Kirby FTP: Upload'
 			},
 			iconPath: {
 				light: element.isFolder ? path.join(__filename, '..', '..', '..', 'resources', 'light', element.iconName + '.svg') : path.join(__filename, '..', '..', '..', 'resources', 'light', element.iconName + '.svg'),
 				dark: element.isFolder ? path.join(__filename, '..', '..', '..', 'resources', 'dark', element.iconName + '.svg') : path.join(__filename, '..', '..', '..', 'resources', 'dark', element.iconName + '.svg')
-			}
+			},
+			contextValue: element.contextValue
 		};
 	}
 

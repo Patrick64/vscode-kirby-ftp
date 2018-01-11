@@ -19,6 +19,19 @@ export enum CompareNodeState {
 }
 
 
+function getCompareNodeStateString(state:CompareNodeState):string {
+	if (state == CompareNodeState.equal) return 'equal';
+	if (state == CompareNodeState.localOnly) return 'localOnly';
+	if (state == CompareNodeState.remoteOnly) return 'remoteOnly';
+	if (state == CompareNodeState.remoteChanged) return 'remoteChanged';
+	if (state == CompareNodeState.localChanged) return 'localChanged';
+	if (state == CompareNodeState.unequal) return 'unequal';
+	if (state == CompareNodeState.bothChanged) return 'bothChanged';
+	if (state == CompareNodeState.conflict) return 'conflict';
+	if (state == CompareNodeState.error) return 'error';
+	if (state == CompareNodeState.loading) return 'loading';
+	return '';
+}
 
 
 export class CompareNode implements ITreeNode {
@@ -27,6 +40,8 @@ export class CompareNode implements ITreeNode {
 	private children:CompareNode[] = [];
 	private profiles:ITreeNode;
 	public nodeState: CompareNodeState = CompareNodeState.loading;
+
+//	contextValue = 'file';
 	
 	// private _rando:number;
 
@@ -35,6 +50,7 @@ export class CompareNode implements ITreeNode {
 		// var uri = `ftp://${host}${_parent}${entry.name}`;
 		// this._resource = Uri.parse(uri);
 		// this.rando = (Date.now());
+		
 	}
 
 	public get resource(): Uri {
@@ -61,7 +77,15 @@ export class CompareNode implements ITreeNode {
 		this.remoteNode = _remoteNode;
 	}
 
+	public get contextValue():string {
+		if (this.isFolder) 
+			return 'folder_' + getCompareNodeStateString(this.nodeState);
+		else 
+			return 'file_' + getCompareNodeStateString(this.nodeState);
+	}
+
 	
+
 
 	public doComparison(localModel, remoteModel):Thenable<void> {
 		
@@ -166,11 +190,12 @@ export class CompareModel {
 	
 	private rootNode:CompareNode;
 	private hasUserRequestedAPause: boolean = false;
-
+	
 	constructor(private localModel, private remoteModel, private nodeUpdated:Function) {
 		this.rootNode = new CompareNode(null,null,"","root",true,null, this);
 		//this.refreshAll();
 		// setInterval( () => { this.nodeUpdated(null); }, 1000);
+
 	}
 
 	public connect() {
@@ -191,18 +216,19 @@ export class CompareModel {
 
 	public get roots(): Thenable<ITreeNode[]> {
 		// return this.getChildren(null);
-		return this.rootNode.getChildNodes());
+		return this.rootNode.getChildNodes();
 	}
 
 	public refreshAll() {
 		console.log('FTP refresall is started.');
+		vscode.window.setStatusBarMessage("Kirby FTP: Refreshing files list");
 		return this.connect()
 			.then(() => { 
 				return this.refreshNodeRecursively(this.rootNode); 
 			}).then(this.disconnect.bind(this))
 			.then(() => {
 				console.log('FTP refresall is done.');
-
+				vscode.window.setStatusBarMessage("Kirby FTP: Finished refreshing files list");
 			}).catch(err => {
 				console.log(err)
 				vscode.window.showErrorMessage("Kirby FTP: " + err);
@@ -217,7 +243,7 @@ export class CompareModel {
 		// same as above but remote
 		var getRemoteNodes = !isRootNode ? (node.remoteNode ? this.remoteModel.getChildren(node.remoteNode) : []) : this.remoteModel.roots;
 		// wait for promises
-		
+		vscode.window.setStatusBarMessage("Kirby FTP: Scanning folder " + node.name);
 		return Promise.all([getLocalNodes,getRemoteNodes]).then(([localNodes,remoteNodes]) => {
 			
 				
