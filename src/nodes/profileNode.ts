@@ -64,4 +64,8 @@ export class ProfileNode implements ITreeNode{
     public upload() {}
     public download() {}
 
+    public userRequestsPause() {
+        this.compareModel.userRequestsPause();
+    }
+
 }

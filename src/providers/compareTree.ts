@@ -15,7 +15,7 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode>, TextDoc
 	readonly onDidChangeTreeData: Event<any> = this._onDidChangeTreeData.event;
 
 	// private model: CompareModel;
-	private profileNodes: ProfileNode[];
+	private profileNodes: ProfileNode[] = [];
 	private roots=[];
 	private nodes={};
 
@@ -48,6 +48,7 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode>, TextDoc
 	}
 
 	public getChildren(element?: ITreeNode): ITreeNode[] | Thenable<ITreeNode[]> {
+		this.profileNodes.forEach((p) => { p.userRequestsPause(); });
 		if (!element) {
 			return Promise.resolve(this.profileNodes);
 				
@@ -60,7 +61,7 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode>, TextDoc
 			// if (this.roots.length>0) 
 			// 	return Promise.resolve(this.roots);
 			// else {
-				// this.model.userRequestsPause();
+				 
 				// return this.model.roots.then((t) => { this.roots = t; return t; } );
 			// }
 		} else {

@@ -102,8 +102,9 @@ export class CompareNode implements ITreeNode {
 
 
 	public doComparison(localModel, remoteModel):Thenable<void> {
-		
-        if (!this.localNode && !this.remoteNode) {
+		if (this.isFolder) {
+			this.nodeState = CompareNodeState.loading; // leave until updateFolderState is called.
+        } else if (!this.localNode && !this.remoteNode) {
             this.nodeState = CompareNodeState.error;
         } else	if (!this.localNode) {
             this.nodeState = CompareNodeState.remoteOnly;
@@ -137,13 +138,13 @@ export class CompareNode implements ITreeNode {
 	public get iconName(): string {
 
 		if (this.isFolder) {
-			if (!this.localNode && !this.remoteNode) {
-				return 'error';
-			} else	if (!this.localNode) {
-				return 'folder-remote';
-			} else if (!this.remoteNode) {
-				return 'folder-local';
-			} else {
+			// if (!this.localNode && !this.remoteNode) {
+			// 	return 'error';
+			// } else	if (!this.localNode) {
+			// 	return 'folder-remote';
+			// } else if (!this.remoteNode) {
+			// 	return 'folder-local';
+			// } else {
 				switch (this.nodeState) {
 					case CompareNodeState.loading: return 'loading'; 
 					case CompareNodeState.error: return 'error'; 
@@ -155,7 +156,7 @@ export class CompareNode implements ITreeNode {
 					case CompareNodeState.remoteChanged: return 'folder-changed'; 
 					case CompareNodeState.localChanged: return 'folder-changed'; 
 				}
-			}
+			// }
 		}
 		switch (this.nodeState) {
 			case CompareNodeState.loading: return 'loading'; 
@@ -213,6 +214,7 @@ export class CompareModel {
 	}
 
 	public connect() {
+		vscode.window.setStatusBarMessage("Kirby FTP: Connecting to remote...");
 		return Promise.all([this.localModel.connect(), this.remoteModel.connect()]);
 	
 	}

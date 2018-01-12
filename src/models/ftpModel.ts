@@ -73,7 +73,7 @@ export class FtpModel {
 	public get roots(): Thenable<FtpNode[]> {
 		
 		return new Promise((c, e) => {
-			this.client.list((err, list) => {
+			this.client.list(this.rootDir, (err, list) => {
 				if (err) {
 					return e(err);
 				}
