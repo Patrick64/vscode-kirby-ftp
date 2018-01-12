@@ -1,4 +1,4 @@
-
+import { CompareNode } from '../models/compareModel';
 
 export interface ITreeNode {
     
@@ -11,5 +11,12 @@ export interface ITreeNode {
     updateFolderState();
     getChildNodes(): Thenable<ITreeNode[]>;
     contextValue:string;
+    // uploadFile(compareNode:CompareNode);
+
+	// downloadFile(compareNode:CompareNode);
+	// uploadFolder(compareNode:CompareNode);
+    // downloadFolder(compareNode:CompareNode);
+    upload();
+    download();
 
 }

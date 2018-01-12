@@ -21,7 +21,7 @@ export class ProfileNode implements ITreeNode{
         this.nodeName = workspaceFolder.name + " ↔ ️" + settings.protocol + '://' + settings.host + settings.remotePath;
         this.compareModel = new CompareModel(
             new DiskModel(fullLocalPath), 
-            new FtpModel(settings.host, settings.username, settings.password,settings.port),
+            new FtpModel(settings.host, settings.username, settings.password,settings.port,settings.remotePath),
             nodeUpdated );	
     }
 
@@ -52,5 +52,16 @@ export class ProfileNode implements ITreeNode{
     public refreshAll() {
         return this.compareModel.refreshAll();
     }
+
+    public uploadFile(compareNode:CompareNode) {
+		
+	}
+
+	public downloadFile(compareNode:CompareNode) {}
+	public uploadFolder(compareNode:CompareNode) {}
+	public downloadFolder(compareNode:CompareNode) {}
+
+    public upload() {}
+    public download() {}
 
 }

@@ -5,6 +5,7 @@ import * as path from 'path';
 import { IEntry } from '../models/ientry';
 const fse = require('fs-extra')
 
+
 export class DiskNode {
 	private _resource: Uri;
 
@@ -65,6 +66,15 @@ export class DiskModel {
 		});
 	}
 
+	public createReadStream(node:DiskNode) {
+		// c.get('foo.txt', function(err, stream) {
+		// 	if (err) throw err;
+		// 	stream.once('close', function() { c.end(); });
+		// 	stream.pipe(fs.createWriteStream('foo.local-copy.txt'));
+		//   });
+		return fse.createReadStream(node.path);
+	}
+	
 
 	// public connect(): Thenable<Client> {
 	// 	return new Promise((c, e) => {

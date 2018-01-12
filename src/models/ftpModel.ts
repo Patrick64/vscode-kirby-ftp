@@ -42,7 +42,7 @@ export class FtpModel {
 	
 	private client:Client;
 
-	constructor(private host: string, private user: string, private password: string, private port: number) {
+	constructor(private host: string, private user: string, private password: string, private port: number, private rootDir:string) {
 	}
 
 	public connect(): Thenable<Client> {
@@ -82,7 +82,7 @@ export class FtpModel {
 
 				return c(this.sort(
 					list.filter(entry => entry.name != "." && entry.name != "..")
-					.map(entry => new FtpNode(entry, this.host, '/'))));
+					.map(entry => new FtpNode(entry, this.host, this.rootDir))));
 			});
 		});
 	
@@ -171,4 +171,14 @@ export class FtpModel {
 			});
 		});
 	}
+
+	public writeFileFromStream(node:FtpNode,stream) {
+		return new Promise((resolve,reject) => {
+			// stream.once('end', resolve);
+			stream.once('error', reject);
+			this.client.put(stream,node.path,resolve);
+			
+		})
+	}
+
 }

@@ -27,7 +27,8 @@ export function activate(context: vscode.ExtensionContext) {
 		// vscode.workspace.openTextDocument(node.resource).then(document => {
 		// 	vscode.window.showTextDocument(document);
         // });
-        vscode.window.showInformationMessage("todo: Upload file ");
+       // vscode.window.showInformationMessage("todo: Upload file ");
+        node.upload();
 	});
     getAllProfiles().then((profiles):Promise<void> => {
         compareViewProvider.loadSettingsProfiles(profiles);

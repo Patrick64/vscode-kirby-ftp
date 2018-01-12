@@ -84,7 +84,21 @@ export class CompareNode implements ITreeNode {
 			return 'file_' + getCompareNodeStateString(this.nodeState);
 	}
 
-	
+	public upload() {
+		if (this.isFolder) {
+			return this.model.uploadFolder(this);
+		} else {
+			return this.model.uploadFile(this);
+		}
+	}
+
+	public download() {
+		if (this.isFolder) {
+			return this.model.downloadFolder(this);
+		} else {
+			return this.model.downloadFile(this);
+		}
+	}
 
 
 	public doComparison(localModel, remoteModel):Thenable<void> {
@@ -348,6 +362,26 @@ export class CompareModel {
 			return n1.name.localeCompare(n2.name);
 		});
 	}
+
+	public uploadFile(compareNode:CompareNode):Thenable<void> {
+		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
+		return this.connect()
+		.then(() => { 
+			var stream = this.localModel.createReadStream(compareNode.localNode);
+			if (compareNode.remoteNode) {
+				return this.remoteModel.writeFileFromStream(compareNode.remoteNode,stream);
+			} else {
+				// return this.remoteModel.writeNewFile(compareNode.path,contents);
+			}
+		})
+		.then(() => { this.disconnect(); })
+		.then(() => { vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
+	}
+
+	public downloadFile(compareNode:CompareNode) {}
+	public uploadFolder(compareNode:CompareNode) {}
+	public downloadFolder(compareNode:CompareNode) {}
+	
 
 	public getContent(resource: Uri): Thenable<string> {
 		return Promise.resolve("abc");

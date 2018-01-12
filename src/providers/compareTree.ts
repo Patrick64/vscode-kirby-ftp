@@ -76,6 +76,7 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode>, TextDoc
 	}
 
 	public provideTextDocumentContent(uri: Uri, token: CancellationToken): ProviderResult<string> {
+	// public provideTextDocumentContent(uri: Uri, token: CancellationToken) {
 		// return this.model.getContent(uri);
 	}
 
