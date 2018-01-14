@@ -33,7 +33,7 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode>, TextDoc
 	public getTreeItem(element: ITreeNode): TreeItem {
 		return {
 			label: element.name,
-			collapsibleState: element.isFolder ? TreeItemCollapsibleState.Collapsed : void 0,
+			collapsibleState: element.isFolder ? TreeItemCollapsibleState.Expanded : void 0,
 			command: element.isFolder ? void 0 : {
 				command: 'uploadFile',
 				arguments: [element],

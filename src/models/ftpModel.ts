@@ -181,4 +181,22 @@ export class FtpModel {
 		})
 	}
 
+	public writeNewFileFromStream(parentFolder:FtpNode,filename:string,stream) {
+		return new Promise((resolve,reject) => {
+			// stream.once('end', resolve);
+			stream.once('error', reject);
+			this.client.put(stream,path.join(parentFolder.path,filename),resolve);
+			
+		})
+	}
+
+	public mkdir(parentPath:string,folderName) {
+		return new Promise((resolve,reject) => {
+			var p = path.join(this.rootDir,parentPath,folderName);
+			return this.client.mkdir(p,(err) => {
+				if (err) reject(err); else resolve();
+			})
+		});
+	}
+
 }

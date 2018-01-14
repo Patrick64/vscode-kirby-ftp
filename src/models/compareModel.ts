@@ -3,6 +3,7 @@ import * as path from 'path';
 import { setTimeout, setInterval } from 'timers';
 import { ITreeNode } from '../nodes/iTreeNode';
 import * as vscode from 'vscode';
+require('promise-pause');
 
 export enum CompareNodeState {
 	
@@ -37,7 +38,7 @@ function getCompareNodeStateString(state:CompareNodeState):string {
 export class CompareNode implements ITreeNode {
 
 	private _resource: Uri;
-	private children:CompareNode[] = [];
+	public children:CompareNode[] = [];
 	private profiles:ITreeNode;
 	public nodeState: CompareNodeState = CompareNodeState.loading;
 
@@ -45,7 +46,7 @@ export class CompareNode implements ITreeNode {
 	
 	// private _rando:number;
 
-	constructor(public localNode, public remoteNode, private _parent: string, private filename: string, private _isFolder: boolean, private parentNode: ITreeNode, public model:CompareModel) {
+	constructor(public localNode, public remoteNode, private _parent: string, private filename: string, private _isFolder: boolean, public parentNode: CompareNode, public model:CompareModel) {
 		
 		// var uri = `ftp://${host}${_parent}${entry.name}`;
 		// this._resource = Uri.parse(uri);
@@ -88,7 +89,7 @@ export class CompareNode implements ITreeNode {
 		if (this.isFolder) {
 			return this.model.uploadFolder(this);
 		} else {
-			return this.model.uploadFile(this);
+			return this.model.uploadFile(this).catch(err => console.log(err));
 		}
 	}
 
@@ -150,11 +151,12 @@ export class CompareNode implements ITreeNode {
 					case CompareNodeState.error: return 'error'; 
 					case CompareNodeState.equal: return 'folder-equal'; 
 					case CompareNodeState.conflict: return 'folder-conflict'; 
-					case CompareNodeState.localOnly: return 'folder-changed'; 
-					case CompareNodeState.remoteOnly: return 'folder-changed'; 
+					case CompareNodeState.localOnly: return 'folder-local'; 
+					case CompareNodeState.remoteOnly: return 'folder-remote'; 
 					case CompareNodeState.unequal: return 'folder-conflict'; 
 					case CompareNodeState.remoteChanged: return 'folder-changed'; 
 					case CompareNodeState.localChanged: return 'folder-changed'; 
+					case CompareNodeState.bothChanged: return 'folder-changed'; 
 				}
 			// }
 		}
@@ -177,11 +179,11 @@ export class CompareNode implements ITreeNode {
 	}
 
 	public getChildNodes() {
-		return Promise.resolve(this.children);
+		return Promise.resolve(this.model.sort(this.children));
 	}
 
 	public updateFolderState() {
-		var newState:CompareNodeState = null;
+		var newState:CompareNodeState = CompareNodeState.equal;
 		if (!this.localNode && !this.remoteNode) {
             this.nodeState = CompareNodeState.error;
         } else	if (!this.localNode) {
@@ -191,9 +193,30 @@ export class CompareNode implements ITreeNode {
 		} else if (this.children.length==0) {
 			this.nodeState = CompareNodeState.equal;
 		} else {
-			this.nodeState = this.children.reduce((newState: CompareNodeState, childNode: CompareNode) => {
-				if (childNode.nodeState > newState) return childNode.nodeState; else return newState;
-			}, 0);
+			var states = this.children.reduce((states: CompareNodeState[], childNode: CompareNode) => {
+				if (states.indexOf(childNode.nodeState)==-1) states.push(childNode.nodeState)
+				return states;
+				// if (childNode.nodeState > newState) return childNode.nodeState; else return newState;
+				// if (newState == CompareNodeState.equal)
+			}, []);
+			if (states.indexOf(CompareNodeState.loading)!=-1)
+				this.nodeState = CompareNodeState.loading;
+			else if (states.indexOf(CompareNodeState.error)!=-1)
+				this.nodeState = CompareNodeState.error;
+			else if (states.indexOf(CompareNodeState.conflict) != -1 || states.indexOf(CompareNodeState.unequal) != -1)
+				this.nodeState = CompareNodeState.unequal;
+			else if ((states.indexOf(CompareNodeState.localOnly) != -1 || states.indexOf(CompareNodeState.localChanged) != -1) &&
+				(states.indexOf(CompareNodeState.remoteOnly) == -1 || states.indexOf(CompareNodeState.remoteChanged) == -1)) 
+				this.nodeState = CompareNodeState.localChanged;
+			else if ((states.indexOf(CompareNodeState.remoteOnly) != -1 || states.indexOf(CompareNodeState.remoteChanged) != -1) &&
+				(states.indexOf(CompareNodeState.localOnly) == -1 || states.indexOf(CompareNodeState.localChanged) == -1)) 
+				this.nodeState = CompareNodeState.remoteChanged;
+			else if (states.length==0 || (states.length==1 && states[0] == CompareNodeState.equal))
+				this.nodeState = CompareNodeState.equal;
+			else
+				this.nodeState == CompareNodeState.bothChanged;
+			
+
 		}
 		if (this._parent) this.parentNode.updateFolderState();
 	}
@@ -207,7 +230,7 @@ export class CompareModel {
 	private hasUserRequestedAPause: boolean = false;
 	
 	constructor(private localModel, private remoteModel, private nodeUpdated:Function) {
-		this.rootNode = new CompareNode(null,null,"","root",true,null, this);
+		this.rootNode = new CompareNode(null,null,"",path.sep,true,null, this);
 		//this.refreshAll();
 		// setInterval( () => { this.nodeUpdated(null); }, 1000);
 
@@ -240,7 +263,8 @@ export class CompareModel {
 		vscode.window.setStatusBarMessage("Kirby FTP: Refreshing files list");
 		return this.connect()
 			.then(() => { 
-				return this.refreshNodeRecursively(this.rootNode); 
+				// return this.refreshNodeRecursively(this.rootNode); 
+				return this.doFullRefresh(this.rootNode);
 			}).then(this.disconnect.bind(this))
 			.then(() => {
 				console.log('FTP refresall is done.');
@@ -251,107 +275,140 @@ export class CompareModel {
 			});
 	}
 
-	public refreshNodeRecursively(node:CompareNode, retries = 0) {
+	// public refreshFolder(node:CompareNode) {
+	// 	var isRootNode = (node == this.rootNode);
+	// 	var parentPath = !isRootNode ? node.path : path.sep;
+	// 	// if node is null then get root items, if it's not null then get all local items unless there's no localNode which means the directory doesnt exist locally
+	// 	var getLocalNodes = !isRootNode ? (node.localNode ? this.localModel.getChildren(node.localNode) : []) : this.localModel.roots;
+	// 	// same as above but remote
+	// 	var getRemoteNodes = !isRootNode ? (node.remoteNode ? this.remoteModel.getChildren(node.remoteNode) : []) : this.remoteModel.roots;
+	// 	// wait for promises
+	// 	vscode.window.setStatusBarMessage("Kirby FTP: Scanning folder " + node.name);
+	// 	return Promise.all([getLocalNodes,getRemoteNodes]).then(([localNodes,remoteNodes]) => {
+	// 		var remoteNodeByName = {},  localNodeByName = {};
+	// 		remoteNodes.forEach( n => { remoteNodeByName[n.name] = n; } );
+	// 		localNodes.forEach( n => { localNodeByName[n.name] = n; } );
+	// 		node.children.forEach(element => {
+				
+	// 		});
+	// 	});
+	// }
+
+	public refreshFolder(node:CompareNode,isLocal:boolean) {
+		var model = isLocal ? this.localModel : this.remoteModel;
+		var localOrRemoteNode = isLocal ? node.localNode : node.remoteNode;
+
 		var isRootNode = (node == this.rootNode);
-		var parentPath = !isRootNode ? node.path : "/";
-		// if node is null then get root items, if it's not null then get all local items unless there's no localNode which means the directory doesnt exist locally
-		var getLocalNodes = !isRootNode ? (node.localNode ? this.localModel.getChildren(node.localNode) : []) : this.localModel.roots;
-		// same as above but remote
-		var getRemoteNodes = !isRootNode ? (node.remoteNode ? this.remoteModel.getChildren(node.remoteNode) : []) : this.remoteModel.roots;
-		// wait for promises
-		vscode.window.setStatusBarMessage("Kirby FTP: Scanning folder " + node.name);
-		return Promise.all([getLocalNodes,getRemoteNodes]).then(([localNodes,remoteNodes]) => {
-			
+		var parentPath = !isRootNode ? node.path : path.sep;
+		if (isRootNode || localOrRemoteNode) {
+			var getNodesFunc = isRootNode ? model.roots : model.getChildren(localOrRemoteNode);
+			return getNodesFunc.then((newNodes) => {
 				
-				// now combine the local and remote nodes into a list of compareNodes which will be shown in the tree
-				var remoteNodeByName = {},  localNodeByName = {};
-				remoteNodes.forEach( n => { remoteNodeByName[n.name] = n; } );
-				localNodes.forEach( n => { localNodeByName[n.name] = n; } );
-				var compareNodes = localNodes.map(localNode => {
-					var remoteNode = remoteNodeByName[localNode.name];
-					if (remoteNode) {
-						return new CompareNode(localNode,remoteNode,"/",localNode.name,localNode.isFolder,node,this);
-					} else {
-						return new CompareNode(localNode,null,"/",localNode.name,localNode.isFolder,node,this);
-					}
-				});
-				remoteNodes.forEach(remoteNode => {
-					if (!localNodeByName[remoteNode.name]) {
-						compareNodes.push(new CompareNode(null,remoteNode,"/",remoteNode.name, remoteNode.isFolder,node,this));
-					}
-				});
-				compareNodes = compareNodes.sort((l,r) => {
-					if (l.name == r.name) return 0;
-					if (l.isFolder == r.isFolder) return l.name < r.name ? -1 : 1;
-					return l.isFolder ? -1 : 1; 
-				});
-				// compareNodes.forEach(n => { setInterval(() => { this.nodeUpdated(n); },1000) });
-				// return compareNodes;
-
-				// add children to node
-				compareNodes.forEach( newNode => { node.addChildNode(newNode); });
-				
-				// tell vscode that this node has updated
-				this.nodeUpdated(isRootNode ? null : node);
-				
-				return compareNodes.reduce( (p:Thenable<void>,n:CompareNode) => {
-					return p.then(() => { return n.doComparison(this.localModel,this.remoteModel); } );
-				}, Promise.resolve() ).then(() => { 
-					// tell vscode that this node has updated
-					this.nodeUpdated(isRootNode ? null : node);
+				var childrenByName = node.children.reduce( (p,c) => { p[c.name] = c; return p; }, {} );
+				newNodes.forEach( newNode => {
 					
-					return compareNodes;
-				});
-
-
-				
-
-			
-		}).then( (compareNodes:CompareNode[]) => {
-			return new Promise((resolve,reject) => {
-				// recursivly get nodes in folders
-				// process.nextTick(() => {
-				setTimeout(()=>{
-					// Promise.all(
-					try {
-						compareNodes
-						.filter(n => n.isFolder)
-						.reduce( (p:any,folderNode:CompareNode) => {
-							return p.then(() => { return this.refreshNodeRecursively(folderNode) } );
-						}, Promise.resolve() )
-						.then(() => {
-							// we've finished with updating the folders so look at the children to see what state the folder is
-							if (node.isFolder) {
-								node.updateFolderState();
-								this.nodeUpdated(node);
-							}
-					 	})
-						.then(resolve);
-					} catch(err) {
-						reject(err);
+					if (isLocal && childrenByName[newNode.name]) {
+						childrenByName[newNode.name].setLocalNode(newNode);
+					} else if (isLocal) {
+						node.children.push(new CompareNode(newNode,null,node.path,newNode.name,newNode.isFolder,node,this));
+					} else if (!isLocal && childrenByName[newNode.name]) {
+						childrenByName[newNode.name].setRemoteNode(newNode);
+					} else if (!isLocal) {
+						node.children.push(new CompareNode(null,newNode,node.path,newNode.name,newNode.isFolder,node,this));
 					}
-					// ).then(resolve);
-				},this.hasUserRequestedAPause || isRootNode ? 500 : 1);
-				this.hasUserRequestedAPause=false;
-				// },reject);
-			}); // end promise
-		}) // end then 
-		.catch(err => {
-			console.error(err)
-			if (retries<5) 
-				this.refreshNodeRecursively(node,retries+1);
-			else
-				vscode.window.showErrorMessage("Remote listing failed." );
+					
+				});
+				var newNodesByName = newNodes.reduce( (prev,c) => { prev[c.name] = c; return prev; }, {} );
+				node.children.forEach( (childNode,i) => {
+					if (!newNodesByName[childNode.name]) {
+						// file doesnt exist locally
+						if (isLocal) {
+							childNode.setLocalNode(null);
+						} else {
+							childNode.setRemoteNode(null);
+						}
+						
+					}
+				});
+				this.removeNodelessChildren(node);	
+				this.updateFolderStateRecursive(node);
+				this.nodeUpdated(node);
+			});
+		} else {
+			if (isLocal) {
+				node.children.forEach(c => c.setLocalNode(null));
+			} else {
+				node.children.forEach(c => c.setRemoteNode(null));
+			}
+			this.removeNodelessChildren(node);	
+			this.updateFolderStateRecursive(node);
+			this.nodeUpdated(node);
+			return Promise.resolve();
+		}
+	}
+
+	public removeNodelessChildren(node:CompareNode) {
+		node.children = node.children.filter( n => (n.remoteNode || n.localNode));
+	}
+
+	public refreshFolderRecursivly(node,isLocal) {
+		
+		return this.refreshFolder(node,isLocal).pause(this.hasUserRequestedAPause ? 500 : 0).then(() => {
+			this.hasUserRequestedAPause = false;
+			var promises = node.children
+			.filter( c => c.isFolder )
+			.map( subFolder => {
+				return this.refreshFolderRecursivly(subFolder,isLocal)
+			});
+			return Promise.all(promises).then(() => {
+				this.nodeUpdated(node.isRootNode ? null : node);
+			});
 		});
 		
 	}
+
+	public doComparisonsRecursivly(node) {
+		var compareAllFiles = node.children
+			.filter( c => !c.isFolder )
+			.map( file => file.doComparison(this.localModel,this.remoteModel).then(() => this.nodeUpdated(file)));
+			
+		
+		var compareAllFolders = node.children
+			.filter( c => c.isFolder )
+			.map( folder => {
+				return this.doComparisonsRecursivly(folder).then(() => this.nodeUpdated(folder));
+			});
+		return Promise
+		.all(compareAllFiles)
+		.then(() => Promise.all(compareAllFolders))
+		.then(() => node.updateFolderState());
+		
+	}
+
+	public doFullRefresh(node:CompareNode) {
+		return this.refreshFolderRecursivly(node,true)
+		.then(() => this.nodeUpdated(null))
+		.pause(500)
+		.then(() => {
+			return this.refreshFolderRecursivly(node,false)
+		})
+		.then(() => this.nodeUpdated(null))
+		.pause(500)
+		.then(() => this.doComparisonsRecursivly(node))
+		.catch(err => {
+					console.error(err)
+					
+						vscode.window.showErrorMessage("Remote listing failed. " + err );
+				});
+	}
+
 
 	public getChildren(node: CompareNode): Thenable<CompareNode[]> {
 		return Promise.resolve(node.getChildNodes());
 		
 	}
 
-	private sort(nodes: CompareNode[]): CompareNode[] {
+	public sort(nodes: CompareNode[]): CompareNode[] {
 		return nodes.sort((n1, n2) => {
 			if (n1.isFolder && !n2.isFolder) {
 				return -1;
@@ -365,18 +422,26 @@ export class CompareModel {
 		});
 	}
 
-	public uploadFile(compareNode:CompareNode):Thenable<void> {
+	public uploadFile(compareNode:CompareNode):Promise<void> {
 		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
 		return this.connect()
 		.then(() => { 
+			vscode.window.setStatusBarMessage("Kirby FTP: Reading " + compareNode.name + " ..." );
 			var stream = this.localModel.createReadStream(compareNode.localNode);
 			if (compareNode.remoteNode) {
 				return this.remoteModel.writeFileFromStream(compareNode.remoteNode,stream);
 			} else {
-				// return this.remoteModel.writeNewFile(compareNode.path,contents);
+				vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
+				return this.createRemoteFolder(compareNode.parentNode).then(() => {
+					return this.remoteModel.writeNewFileFromStream(compareNode.parentNode.remoteNode,compareNode.name,stream);
+				}).then(() => {
+					return this.refreshFolder(compareNode.parentNode,false);
+				}).then(() => compareNode.doComparison(this.localModel,this.remoteModel))
+				
 			}
 		})
 		.then(() => { this.disconnect(); })
+		.then(() => { this.nodeUpdated(null); })
 		.then(() => { vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
 	}
 
@@ -384,6 +449,24 @@ export class CompareModel {
 	public uploadFolder(compareNode:CompareNode) {}
 	public downloadFolder(compareNode:CompareNode) {}
 	
+	public createRemoteFolder(compareNode:CompareNode):Thenable<void> {
+		
+		if (compareNode.remoteNode || !compareNode.parentNode) {
+			return Promise.resolve();
+		} else if (compareNode.parentNode) {
+			return this.createRemoteFolder(compareNode.parentNode).then(() => { 
+				vscode.window.setStatusBarMessage("Kirby FTP: Creating remote folder " + compareNode.name + " ..." );
+				return this.remoteModel.mkdir(compareNode.parentNode.path, compareNode.name);
+			}).then(() => {
+				return this.refreshFolder(compareNode.parentNode,false).then(() => compareNode.parentNode.updateFolderState()); 
+			}
+			);
+		} else {
+			return Promise.reject("createRemoteFolder couldnt find root folder");
+		}
+	}
+
+
 
 	public getContent(resource: Uri): Thenable<string> {
 		return Promise.resolve("abc");
@@ -409,6 +492,12 @@ export class CompareModel {
 		// 		});
 		// 	});
 		// });
+	}
+	public updateFolderStateRecursive(node:CompareNode) {
+		node.updateFolderState();
+		if (node.parentNode) {
+			this.updateFolderStateRecursive(node.parentNode);
+		}
 	}
 }
 
