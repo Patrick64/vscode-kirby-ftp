@@ -48,7 +48,10 @@ export class ProfileNode implements ITreeNode{
     public getChildNodes():Thenable<ITreeNode[]> {
         return this.compareModel.roots;
     }
-
+    public get hasChildren():boolean {
+		return true;
+    }
+    
     public refreshAll() {
         return this.compareModel.refreshAll();
     }

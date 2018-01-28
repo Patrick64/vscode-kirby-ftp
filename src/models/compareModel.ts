@@ -78,6 +78,10 @@ export class CompareNode implements ITreeNode {
 		this.remoteNode = _remoteNode;
 	}
 
+	public get hasChildren():boolean {
+		return (this.children.length>0);
+	}
+
 	public get contextValue():string {
 		if (this.isFolder) 
 			return 'folder_' + getCompareNodeStateString(this.nodeState);
@@ -424,6 +428,8 @@ export class CompareModel {
 
 	public uploadFile(compareNode:CompareNode):Promise<void> {
 		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
+		compareNode.nodeState = CompareNodeState.loading;
+		this.nodeUpdated(compareNode); 
 		return this.connect()
 		.then(() => { 
 			vscode.window.setStatusBarMessage("Kirby FTP: Reading " + compareNode.name + " ..." );
@@ -437,7 +443,7 @@ export class CompareModel {
 				}).then(() => {
 					return this.refreshFolder(compareNode.parentNode,false);
 				}).then(() => compareNode.doComparison(this.localModel,this.remoteModel))
-				
+				.then(() => this.updateFolderStateRecursive(compareNode.parentNode));
 			}
 		})
 		.then(() => { this.disconnect(); })

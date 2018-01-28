@@ -11,6 +11,7 @@ export interface ITreeNode {
     updateFolderState();
     getChildNodes(): Thenable<ITreeNode[]>;
     contextValue:string;
+    hasChildren:boolean;
     // uploadFile(compareNode:CompareNode);
 
 	// downloadFile(compareNode:CompareNode);

@@ -56,11 +56,20 @@ export class FtpModel {
 				e('Error while connecting: ' + error.message);
 			})
 
+			// this.client.on('close', hadErr => {
+			// 	e('Couldnt connect: ' + this.host);
+			// })
+
+			// this.client.on('end', () => {
+			// 	e('connection closed: ' + this.host);
+			// })
+
 			this.client.connect({
 				host: this.host,
 				user: this.user,
 				password: this.password,
-				port: this.port
+				port: this.port,
+				connTimeout: 1000
 			});
 		});
 	}
