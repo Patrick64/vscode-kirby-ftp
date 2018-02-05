@@ -18,7 +18,8 @@ export class ProfileNode implements ITreeNode{
         var settings = profileSettings.settings;
         var fullLocalPath = path.join(workspaceFolder.uri.fsPath,settings.localPath ? settings.localPath : '.');
         if (!pathIsInside(fullLocalPath, workspaceFolder.uri.fsPath)) throw("localPath settings must be within workspace directory");
-        this.nodeName = workspaceFolder.name + " ↔ ️" + settings.protocol + '://' + settings.host + settings.remotePath;
+        //this.nodeName = workspaceFolder.name + " ↔ ️" + settings.protocol + '://' + settings.host + settings.remotePath;
+        this.nodeName =   settings.host;
         this.compareModel = new CompareModel(
             new DiskModel(fullLocalPath), 
             new FtpModel(settings.host, settings.username, settings.password,settings.port,settings.remotePath),

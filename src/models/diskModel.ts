@@ -138,6 +138,10 @@ export class DiskModel {
 		// });
 	}
 
+	public getRootNode() {
+		return new DiskNode({name:"", type: "d"}, this.rootDir);
+	}
+
 	private sort(nodes: DiskNode[]): DiskNode[] {
 		return nodes.sort((n1, n2) => {
 			if (n1.isFolder && !n2.isFolder) {

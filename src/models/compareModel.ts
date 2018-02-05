@@ -93,7 +93,10 @@ export class CompareNode implements ITreeNode {
 		if (this.isFolder) {
 			return this.model.uploadFolder(this);
 		} else {
-			return this.model.uploadFile(this).catch(err => console.log(err));
+			return this.model.uploadFile(this).catch(err => {
+				console.log(err);
+				vscode.window.showErrorMessage("Upload of " + this.name + " failed: " + err);
+			});
 		}
 	}
 
@@ -234,7 +237,7 @@ export class CompareModel {
 	private hasUserRequestedAPause: boolean = false;
 	
 	constructor(private localModel, private remoteModel, private nodeUpdated:Function) {
-		this.rootNode = new CompareNode(null,null,"",path.sep,true,null, this);
+		this.rootNode = new CompareNode(localModel.getRootNode(),remoteModel.getRootNode(),"",path.sep,true,null, this);
 		//this.refreshAll();
 		// setInterval( () => { this.nodeUpdated(null); }, 1000);
 
@@ -444,11 +447,20 @@ export class CompareModel {
 					return this.refreshFolder(compareNode.parentNode,false);
 				}).then(() => compareNode.doComparison(this.localModel,this.remoteModel))
 				.then(() => this.updateFolderStateRecursive(compareNode.parentNode));
+				
 			}
 		})
 		.then(() => { this.disconnect(); })
 		.then(() => { this.nodeUpdated(null); })
 		.then(() => { vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
+		.catch((err) => { 
+			this.disconnect(); 
+			compareNode.nodeState = CompareNodeState.error; 
+			this.nodeUpdated(compareNode);
+			vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " failed to upload." );
+			return Promise.reject(err); 
+			
+		})
 	}
 
 	public downloadFile(compareNode:CompareNode) {}

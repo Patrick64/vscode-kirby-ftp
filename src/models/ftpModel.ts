@@ -120,6 +120,10 @@ export class FtpModel {
 		
 	}
 
+	public getRootNode() {
+		return new FtpNode({name: "", type:"d"}, this.host, this.rootDir)
+	}
+
 	private sort(nodes: FtpNode[]): FtpNode[] {
 		return nodes.sort((n1, n2) => {
 			if (n1.isFolder && !n2.isFolder) {
@@ -194,7 +198,12 @@ export class FtpModel {
 		return new Promise((resolve,reject) => {
 			// stream.once('end', resolve);
 			stream.once('error', reject);
-			this.client.put(stream,path.join(parentFolder.path,filename),resolve);
+			this.client.put(stream,path.join(parentFolder.path,filename),(err) => {
+				if (err) 
+					reject(err) 
+				else 
+					resolve();
+			});
 			
 		})
 	}
