@@ -3,6 +3,7 @@ import * as path from 'path';
 import { setTimeout, setInterval } from 'timers';
 import { ITreeNode } from '../nodes/iTreeNode';
 import * as vscode from 'vscode';
+const streamEqual = require('stream-equal');
 require('promise-pause');
 
 export enum CompareNodeState {
@@ -82,6 +83,10 @@ export class CompareNode implements ITreeNode {
 		return (this.children.length>0);
 	}
 
+	public get isRootNode():boolean {
+		return !this.parentNode;
+	}
+
 	public get contextValue():string {
 		if (this.isFolder) 
 			return 'folder_' + getCompareNodeStateString(this.nodeState);
@@ -125,18 +130,18 @@ export class CompareNode implements ITreeNode {
         } else {
             // setInterval( ()=>{  
 			vscode.window.setStatusBarMessage("Kirby FTP: Comparing " + this.name);
-            return Promise.all([localModel.getContentFromNode(this.localNode),remoteModel.getContentFromNode(this.remoteNode)]).then(([localText,remoteText]) => {
-                if (localText == remoteText) {
-                    this.nodeState = CompareNodeState.equal;
-                } else {
-                    this.nodeState = CompareNodeState.unequal;
-                } 
-            }).catch((err)=>{
-                this.nodeState = CompareNodeState.error;
-                console.error(err);
-            });
-                
-                
+			
+			return Promise.all([localModel.createReadStream(this.localNode),remoteModel.createReadStream(this.remoteNode)])
+			.then(([localStream, remoteStream]) => streamEqual(localStream, remoteStream))
+			.then((isEqual) => {
+				// localModel.closeStream();
+				// remoteModel.closeStream();
+				this.nodeState = isEqual ? CompareNodeState.equal : CompareNodeState.unequal;
+			}).catch((err) => {
+				this.nodeState = CompareNodeState.error;
+				return Promise.reject(err);
+			})	;									
+			
             // }, 1000 );
         }
         return Promise.resolve();
@@ -376,19 +381,22 @@ export class CompareModel {
 	}
 
 	public doComparisonsRecursivly(node) {
-		var compareAllFiles = node.children
+		var compareAllFiles = () => node.children
 			.filter( c => !c.isFolder )
-			.map( file => file.doComparison(this.localModel,this.remoteModel).then(() => this.nodeUpdated(file)));
+			.reduce( (promise,file) => 
+				promise.then(() => file.doComparison(this.localModel,this.remoteModel))
+				.then(() => this.nodeUpdated(file))
+			, Promise.resolve());
 			
 		
-		var compareAllFolders = node.children
+		var compareAllFolders = () => node.children
 			.filter( c => c.isFolder )
-			.map( folder => {
-				return this.doComparisonsRecursivly(folder).then(() => this.nodeUpdated(folder));
-			});
-		return Promise
-		.all(compareAllFiles)
-		.then(() => Promise.all(compareAllFolders))
+			.reduce( (promise,folder) => 
+				promise.then(() => this.doComparisonsRecursivly(folder))
+				.then(() => this.nodeUpdated(folder))
+			,Promise.resolve());
+		return compareAllFiles()
+		.then(() => compareAllFolders())
 		.then(() => node.updateFolderState());
 		
 	}

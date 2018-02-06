@@ -208,6 +208,27 @@ export class FtpModel {
 		})
 	}
 
+	public createReadStream(node:FtpNode) {
+		return new Promise((resolve,reject) => {
+			this.client.get(node.path, function(err, stream) {
+				
+				if (err) {
+					reject(err);
+				} else {
+					// stream.once('close', function() { this.client.end(); });
+					resolve(stream);
+				}
+			});
+		});
+	
+		
+	}
+
+	public closeStream() {
+		this.client.end();
+	}
+
+
 	public mkdir(parentPath:string,folderName) {
 		return new Promise((resolve,reject) => {
 			var p = path.join(this.rootDir,parentPath,folderName);

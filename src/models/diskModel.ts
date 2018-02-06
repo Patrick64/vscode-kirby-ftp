@@ -72,9 +72,12 @@ export class DiskModel {
 		// 	stream.once('close', function() { c.end(); });
 		// 	stream.pipe(fs.createWriteStream('foo.local-copy.txt'));
 		//   });
-		return fse.createReadStream(node.path);
+		return Promise.resolve(fse.createReadStream(node.path));
 	}
 	
+	public closeStream() {
+		// nothing to do
+	}
 
 	// public connect(): Thenable<Client> {
 	// 	return new Promise((c, e) => {
