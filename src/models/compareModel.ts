@@ -124,6 +124,7 @@ export class CompareNode implements ITreeNode {
             this.nodeState = CompareNodeState.unequal;
         } else {
             // setInterval( ()=>{  
+			vscode.window.setStatusBarMessage("Kirby FTP: Comparing " + this.name);
             return Promise.all([localModel.getContentFromNode(this.localNode),remoteModel.getContentFromNode(this.remoteNode)]).then(([localText,remoteText]) => {
                 if (localText == remoteText) {
                     this.nodeState = CompareNodeState.equal;
@@ -436,19 +437,8 @@ export class CompareModel {
 		return this.connect()
 		.then(() => { 
 			vscode.window.setStatusBarMessage("Kirby FTP: Reading " + compareNode.name + " ..." );
-			var stream = this.localModel.createReadStream(compareNode.localNode);
-			if (compareNode.remoteNode) {
-				return this.remoteModel.writeFileFromStream(compareNode.remoteNode,stream);
-			} else {
-				vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
-				return this.createRemoteFolder(compareNode.parentNode).then(() => {
-					return this.remoteModel.writeNewFileFromStream(compareNode.parentNode.remoteNode,compareNode.name,stream);
-				}).then(() => {
-					return this.refreshFolder(compareNode.parentNode,false);
-				}).then(() => compareNode.doComparison(this.localModel,this.remoteModel))
-				.then(() => this.updateFolderStateRecursive(compareNode.parentNode));
-				
-			}
+			vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
+			return this.doStreamUpload(compareNode);
 		})
 		.then(() => { this.disconnect(); })
 		.then(() => { this.nodeUpdated(null); })
@@ -463,8 +453,61 @@ export class CompareModel {
 		})
 	}
 
+	// upload file and create directory if neccesary
+	private doStreamUpload(compareNode) {
+		compareNode.nodeState = CompareNodeState.loading;
+		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
+		var stream = this.localModel.createReadStream(compareNode.localNode);
+		var promise;
+		if (compareNode.remoteNode) {
+			promise = this.remoteModel.writeFileFromStream(compareNode.remoteNode,stream);
+		} else {
+			promise = this.createRemoteFolder(compareNode.parentNode).then(() => {
+				return this.remoteModel.writeNewFileFromStream(compareNode.parentNode.remoteNode,compareNode.name,stream);
+			});
+		}
+		return promise.then(() => {
+			compareNode.nodeState = CompareNodeState.equal;
+			return this.refreshFolder(compareNode.parentNode,false);
+		}).then(() => this.updateFolderStateRecursive(compareNode.parentNode));
+			
+		
+	}
+
 	public downloadFile(compareNode:CompareNode) {}
-	public uploadFolder(compareNode:CompareNode) {}
+
+	public uploadFolder(compareNode:CompareNode) {
+		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
+		compareNode.nodeState = CompareNodeState.loading;
+		this.nodeUpdated(compareNode); 
+		return this.connect()
+		.then(() => { 
+			return this.uploadFolderResursive(compareNode);
+		})
+		.then(() => { this.disconnect(); })
+		.then(() => { this.nodeUpdated(null); })
+		.then(() => { vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
+		.catch((err) => { 
+			this.disconnect(); 
+			compareNode.nodeState = CompareNodeState.error; 
+			this.nodeUpdated(compareNode);
+			vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " failed to upload: " + err );
+			return Promise.reject(err); 
+			
+		})
+
+	}
+
+	private uploadFolderResursive(compareNode) {
+		vscode.window.setStatusBarMessage("Kirby FTP: Uploading folder " + compareNode.name + " ...");
+		return this.refreshFolder(compareNode,true)
+		.then(() => this.refreshFolder(compareNode,false))
+		.then(() => compareNode.children.filter(n => !n.isFolder).reduce((promise,n) => promise.then( () => this.doStreamUpload(n)) , Promise.resolve() ))
+		.then(() => compareNode.children.filter(n => n.isFolder).reduce((promise,n) => promise.then( () => this.uploadFolderResursive(n)) , Promise.resolve() ))
+		.then(() => {vscode.window.setStatusBarMessage("Kirby FTP: Folder uploaded " + compareNode.name + " ...") } );
+		
+		
+	}
 	public downloadFolder(compareNode:CompareNode) {}
 	
 	public createRemoteFolder(compareNode:CompareNode):Thenable<void> {
@@ -483,6 +526,8 @@ export class CompareModel {
 			return Promise.reject("createRemoteFolder couldnt find root folder");
 		}
 	}
+
+	
 
 
 

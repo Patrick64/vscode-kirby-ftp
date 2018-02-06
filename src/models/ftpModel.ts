@@ -69,7 +69,7 @@ export class FtpModel {
 				user: this.user,
 				password: this.password,
 				port: this.port,
-				connTimeout: 1000
+				connTimeout: 10000
 			});
 		});
 	}
