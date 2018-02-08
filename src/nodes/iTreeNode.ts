@@ -12,6 +12,7 @@ export interface ITreeNode {
     getChildNodes(): Thenable<ITreeNode[]>;
     contextValue:string;
     hasChildren:boolean;
+    isRootNode:boolean;
     // uploadFile(compareNode:CompareNode);
 
 	// downloadFile(compareNode:CompareNode);

@@ -33,6 +33,9 @@ export class ProfileNode implements ITreeNode{
     public get isFolder() {
         return true;
     }
+    public get isRootNode():boolean {
+        return true;
+    }
 
     public get iconName() {
         return "profile";
