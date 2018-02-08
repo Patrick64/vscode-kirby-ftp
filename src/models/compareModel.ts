@@ -465,16 +465,15 @@ export class CompareModel {
 	private doStreamUpload(compareNode) {
 		compareNode.nodeState = CompareNodeState.loading;
 		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
-		var stream = this.localModel.createReadStream(compareNode.localNode);
-		var promise;
-		if (compareNode.remoteNode) {
-			promise = this.remoteModel.writeFileFromStream(compareNode.remoteNode,stream);
-		} else {
-			promise = this.createRemoteFolder(compareNode.parentNode).then(() => {
-				return this.remoteModel.writeNewFileFromStream(compareNode.parentNode.remoteNode,compareNode.name,stream);
-			});
-		}
-		return promise.then(() => {
+		return this.localModel.createReadStream(compareNode.localNode).then(stream => {
+			if (compareNode.remoteNode) {
+				return  this.remoteModel.writeFileFromStream(compareNode.remoteNode,stream);
+			} else {
+				return this.createRemoteFolder(compareNode.parentNode).then(() => {
+					return this.remoteModel.writeNewFileFromStream(compareNode.parentNode.remoteNode,compareNode.name,stream);
+				});
+			}
+		}).then(() => {
 			compareNode.nodeState = CompareNodeState.equal;
 			return this.refreshFolder(compareNode.parentNode,false);
 		}).then(() => this.updateFolderStateRecursive(compareNode.parentNode));
