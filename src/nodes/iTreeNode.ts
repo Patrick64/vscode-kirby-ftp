@@ -13,6 +13,7 @@ export interface ITreeNode {
     contextValue:string;
     hasChildren:boolean;
     isRootNode:boolean;
+    openDiff?();
     // uploadFile(compareNode:CompareNode);
 
 	// downloadFile(compareNode:CompareNode);

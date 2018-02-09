@@ -3,7 +3,8 @@ import * as path from 'path';
 import { setTimeout, setInterval } from 'timers';
 import { ITreeNode } from '../nodes/iTreeNode';
 import * as vscode from 'vscode';
-const streamEqual = require('stream-equal');
+import { ProfileNode } from '../nodes/profileNode';
+const streamEqual = require('../lib/streamEqual');
 require('promise-pause');
 
 export enum CompareNodeState {
@@ -42,7 +43,7 @@ export class CompareNode implements ITreeNode {
 	public children:CompareNode[] = [];
 	private profiles:ITreeNode;
 	public nodeState: CompareNodeState = CompareNodeState.loading;
-
+	public isLoading:boolean = false;
 //	contextValue = 'file';
 	
 	// private _rando:number;
@@ -88,10 +89,11 @@ export class CompareNode implements ITreeNode {
 	}
 
 	public get contextValue():string {
+
 		if (this.isFolder) 
-			return 'folder_' + getCompareNodeStateString(this.nodeState);
+			return 'folder_' + this.isLoading ? 'loading' : getCompareNodeStateString(this.nodeState);
 		else 
-			return 'file_' + getCompareNodeStateString(this.nodeState);
+			return 'file_' + this.isLoading ? 'loading' : getCompareNodeStateString(this.nodeState);
 	}
 
 	public upload() {
@@ -132,8 +134,9 @@ export class CompareNode implements ITreeNode {
 			vscode.window.setStatusBarMessage("Kirby FTP: Comparing " + this.name);
 			
 			return Promise.all([localModel.createReadStream(this.localNode),remoteModel.createReadStream(this.remoteNode)])
-			.then(([localStream, remoteStream]) => streamEqual(localStream, remoteStream))
-			.then((isEqual) => {
+			.then(([localStream, remoteStream]) => {
+				return streamEqual(localStream, remoteStream).then((isEqual) => { localStream.destroy(); remoteStream.destroy(); return isEqual;});
+			}).then((isEqual) => {
 				// localModel.closeStream();
 				// remoteModel.closeStream();
 				this.nodeState = isEqual ? CompareNodeState.equal : CompareNodeState.unequal;
@@ -147,6 +150,10 @@ export class CompareNode implements ITreeNode {
         return Promise.resolve();
     
 		
+	}
+
+	public openDiff() {
+		this.model.openDiff(this);
 	}
 
 	public get iconName(): string {
@@ -242,7 +249,7 @@ export class CompareModel {
 	private rootNode:CompareNode;
 	private hasUserRequestedAPause: boolean = false;
 	
-	constructor(private localModel, private remoteModel, private nodeUpdated:Function) {
+	constructor(private localModel, private remoteModel, private nodeUpdated:Function, private profileNode: ProfileNode) {
 		this.rootNode = new CompareNode(localModel.getRootNode(),remoteModel.getRootNode(),"",path.sep,true,null, this);
 		//this.refreshAll();
 		// setInterval( () => { this.nodeUpdated(null); }, 1000);
@@ -368,12 +375,10 @@ export class CompareModel {
 		
 		return this.refreshFolder(node,isLocal).pause(this.hasUserRequestedAPause ? 500 : 0).then(() => {
 			this.hasUserRequestedAPause = false;
-			var promises = node.children
+			return node.children
 			.filter( c => c.isFolder )
-			.map( subFolder => {
-				return this.refreshFolderRecursivly(subFolder,isLocal)
-			});
-			return Promise.all(promises).then(() => {
+			.reduce( (promise,subFolder) => promise.then(() => this.refreshFolderRecursivly(subFolder,isLocal) ), Promise.resolve())
+			.then(() => {
 				this.nodeUpdated(node.isRootNode ? null : node);
 			});
 		});
@@ -381,6 +386,7 @@ export class CompareModel {
 	}
 
 	public doComparisonsRecursivly(node) {
+
 		var compareAllFiles = () => node.children
 			.filter( c => !c.isFolder )
 			.reduce( (promise,file) => 
@@ -389,12 +395,17 @@ export class CompareModel {
 			, Promise.resolve());
 			
 		
-		var compareAllFolders = () => node.children
+		var compareAllFolders = () => {
+			return node.children
 			.filter( c => c.isFolder )
 			.reduce( (promise,folder) => 
-				promise.then(() => this.doComparisonsRecursivly(folder))
+				promise.then(() => {
+					return this.doComparisonsRecursivly(folder)
+				})
 				.then(() => this.nodeUpdated(folder))
 			,Promise.resolve());
+		};
+
 		return compareAllFiles()
 		.then(() => compareAllFolders())
 		.then(() => node.updateFolderState());
@@ -415,6 +426,7 @@ export class CompareModel {
 					console.error(err)
 					
 						vscode.window.showErrorMessage("Remote listing failed. " + err );
+					return Promise.reject(err);
 				});
 	}
 
@@ -569,5 +581,33 @@ export class CompareModel {
 			this.updateFolderStateRecursive(node.parentNode);
 		}
 	}
+
+	private setNodeIsLoading(node:CompareNode,isLoading:boolean):void {
+		node.isLoading = isLoading;
+		this.nodeUpdated(node);
+	}
+
+	public openDiff(node) {
+		if (node.localNode && node.remoteNode) {
+			this.setNodeIsLoading(node,true);
+			return this.connect()
+			.then(() => Promise.all([this.localModel.getUri(node.localNode,this.profileNode.workspaceFolder),this.remoteModel.getUri(node.remoteNode,this.profileNode.workspaceFolder)]) )
+			.then(([localUri,remoteUri]) => { 
+				try { 
+					this.setNodeIsLoading(node,false);
+					vscode.commands.executeCommand("vscode.diff",localUri,remoteUri,  node.name + " <-> " + " Remote", { originalEditable:true, readOnly:false } );  
+				} catch(err) { 
+					return Promise.reject(err); 
+				}
+			})
+			.catch((err) => { 
+				vscode.window.showErrorMessage("Kirby FTP: " + err); 
+				console.log(err); 
+				this.setNodeIsLoading(node,false);
+			});
+		}
+		
+	}
+
 }
 

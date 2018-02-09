@@ -1,9 +1,9 @@
-import { ExtensionContext, TreeDataProvider, EventEmitter, TreeItem, Event, window, TreeItemCollapsibleState, Uri, commands, workspace, TextDocumentContentProvider, CancellationToken, ProviderResult } from 'vscode';
+import { ExtensionContext, TreeDataProvider, EventEmitter, TreeItem, Event, window, TreeItemCollapsibleState, Uri, commands, workspace, TextDocumentContentProvider, CancellationToken, ProviderResult, WorkspaceFolder } from 'vscode';
 
 import * as Client from 'ftp';
 import * as path from 'path';
 import { IEntry } from '../models/ientry';
-
+const fse = require('fs-extra')
 
 export class FtpNode {
 	private _resource: Uri;
@@ -102,16 +102,21 @@ export class FtpModel {
 			return new Promise((c, e) => {
 				try {
 					this.client.list(node.path, (err, list) => {
-						if (err) {
-							return e(err);
+						try {
+							if (err) {
+								return e(err);
+							}
+							if (list)
+
+							
+							if (typeof list == "undefined") return [];
+							return c(
+								this.sort(
+									list.filter(entry => entry.name != "." && entry.name != "..")
+									.map(entry => new FtpNode(entry, this.host, node.path))));
+						} catch (err) { 
+							e(err); 
 						}
-
-						
-
-						return c(
-							this.sort(
-								list.filter(entry => entry.name != "." && entry.name != "..")
-								.map(entry => new FtpNode(entry, this.host, node.path))));
 					});
 				} catch(err) { 
 					e(err); 
@@ -138,7 +143,7 @@ export class FtpModel {
 		});
 	}
 
-	public getContentFromNode(node:FtpNode):Thenable<string> {
+	public getContentFromNode(node:FtpNode):Promise<string> {
 		return new Promise((c, e) => {
 			this.client.get(node.path, (err, stream) => {
 				if (err) {
@@ -185,6 +190,34 @@ export class FtpModel {
 		});
 	}
 
+
+	public getBuffer(node:FtpNode): Thenable<Buffer> {
+		
+		return new Promise((c, e) => {
+			this.client.get(node.path, (err, stream) => {
+				try {
+					if (err) {
+						return e(err);
+					}
+					var bufs = [];
+					
+					stream.on('data', function (data) {
+						bufs.push(data);
+						
+					});
+
+					stream.on('end', function () {
+						c( Buffer.concat(bufs));
+					});
+				} catch(err) {
+					e(err);
+				}
+			});
+		});
+		
+	}
+
+
 	public writeFileFromStream(node:FtpNode,stream) {
 		return new Promise((resolve,reject) => {
 			// stream.once('end', resolve);
@@ -215,7 +248,7 @@ export class FtpModel {
 				if (err) {
 					reject(err);
 				} else {
-					// stream.once('close', function() { this.client.end(); });
+					//stream.once('close', function() { this.client.end(); });
 					resolve(stream);
 				}
 			});
@@ -238,4 +271,14 @@ export class FtpModel {
 		});
 	}
 
+	public getUri(node:FtpNode,workspaceFolder:WorkspaceFolder):Promise<Uri> {
+		var filepath = path.join(workspaceFolder.uri.fsPath, ".vscode/kirby-ftp/tmp", node.name);
+		return this.getContentFromNode(node).then((content) => 
+			fse.outputFile(filepath,content).then(() => 
+				Uri.file(filepath)
+			)
+		);
+	}
 }
+
+

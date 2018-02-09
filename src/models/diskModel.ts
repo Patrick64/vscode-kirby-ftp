@@ -66,6 +66,19 @@ export class DiskModel {
 		});
 	}
 
+	public getBuffer(node:DiskNode):Thenable<Buffer> {
+		return new Promise((c, e) => {
+			// var filepath = path.join(this.rootDir, node.path);
+			fse.readFile(node.path, function (err,data) {
+				if (err) {
+				  e(err);
+				}
+				c(data);
+			  });
+
+		});
+	}
+
 	public createReadStream(node:DiskNode) {
 		// c.get('foo.txt', function(err, stream) {
 		// 	if (err) throw err;
@@ -183,5 +196,9 @@ export class DiskModel {
 		// 		});
 		// 	});
 		// });
+	}
+
+	public getUri(node:DiskNode):Promise<Uri> {
+		return Promise.resolve(Uri.file(node.path));
 	}
 }

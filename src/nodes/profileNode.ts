@@ -23,7 +23,8 @@ export class ProfileNode implements ITreeNode{
         this.compareModel = new CompareModel(
             new DiskModel(fullLocalPath), 
             new FtpModel(settings.host, settings.username, settings.password,settings.port,settings.remotePath),
-            nodeUpdated );	
+            nodeUpdated,
+            this );	
     }
 
     public get name() {
@@ -43,6 +44,10 @@ export class ProfileNode implements ITreeNode{
 
     public get path() {
         return 'dunno';
+    }
+
+    public get workspaceFolder() {
+        return this.profileSettings.workspaceFolder;
     }
 
     public updateFolderState() {
@@ -74,5 +79,7 @@ export class ProfileNode implements ITreeNode{
     public userRequestsPause() {
         this.compareModel.userRequestsPause();
     }
+
+    
 
 }

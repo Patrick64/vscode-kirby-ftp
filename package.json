@@ -35,6 +35,11 @@
         "category": "Kirby FTP"
       },
       {
+        "command": "kirby.openFile",
+        "title": "Open File",
+        "category": "Kirby FTP"
+      },
+      {
         "command": "compareView.refreshEntry",
         "title": "Refresh All",
         "icon": {

@@ -11,6 +11,7 @@ const PassThrough = require('stream').PassThrough;
  * @param {Function(!Error, Boolean)} callback
  */
 module.exports = function streamEqual(origStream1, origStream2, callback) {
+    var isEqual:boolean = true;
   if (typeof callback !== 'function') {
     return streamEqualAsPromised(origStream1, origStream2);
   }
@@ -23,6 +24,7 @@ module.exports = function streamEqual(origStream1, origStream2, callback) {
     data: null,
     pos: 0,
     ended: false,
+    read:null
   };
   var stream2 = {
     id: 2,
@@ -30,11 +32,18 @@ module.exports = function streamEqual(origStream1, origStream2, callback) {
     data: null,
     pos: 0,
     ended: false,
+    read:null
   };
-  stream1.read = createRead(stream1, stream2, cleanup);
-  stream2.read = createRead(stream2, stream1, cleanup);
-  var onend1 = createOnEnd(stream1, stream2, cleanup);
-  var onend2 = createOnEnd(stream2, stream1, cleanup);
+  var status = { isEqual: true };
+  stream1.read = createRead(stream1, stream2, status, setIsEqual);
+  stream2.read = createRead(stream2, stream1, status, setIsEqual);
+  var onend1 = createOnEnd(stream1, stream2, status, cleanup);
+  var onend2 = createOnEnd(stream2, stream1, status, cleanup);
+
+  function setIsEqual(err,equal) {
+      if (err) callback(err,false);
+      status.isEqual = equal;
+  }
 
   function cleanup(err, equal) {
     origStream1.removeListener('error', cleanup);
@@ -45,7 +54,7 @@ module.exports = function streamEqual(origStream1, origStream2, callback) {
     readStream2.removeListener('end', onend2);
     readStream1.removeListener('readable', stream2.read);
 
-    callback(err, equal);
+    callback(err, status.isEqual && equal);
   }
 
   origStream1.on('error', cleanup);
@@ -88,45 +97,49 @@ function streamEqualAsPromised(readStream1, readStream2) {
  * @param {Function(Error, Boolean)} callback
  * @return {Function(Buffer|String)}
  */
-function createRead(stream, otherStream, callback) {
+function createRead(stream, otherStream, status, callback) {
   return () => {
+    if (status.isEqual) {
+        if (!stream.ended) stream.read();
+        if (!otherStream.ended) otherStream.read();
+    }
     var data = stream.stream.read();
     if (!data) {
       return stream.stream.once('readable', stream.read);
     }
-
+    
     // Make sure `data` is a buffer.
     if (!Buffer.isBuffer(data)) {
-      if (typeof data === 'object') {
+    if (typeof data === 'object') {
         data = JSON.stringify(data);
-      } else {
+    } else {
         data = data.toString();
-      }
-      data = new Buffer(data);
+    }
+    data = new Buffer(data);
     }
 
     var newPos = stream.pos + data.length;
 
     if (stream.pos < otherStream.pos) {
-      let minLength = Math.min(data.length, otherStream.data.length);
+    let minLength = Math.min(data.length, otherStream.data.length);
 
-      let streamData = data.slice(0, minLength);
-      stream.data = data.slice(minLength);
+    let streamData = data.slice(0, minLength);
+    stream.data = data.slice(minLength);
 
-      let otherStreamData = otherStream.data.slice(0, minLength);
-      otherStream.data = otherStream.data.slice(minLength);
+    let otherStreamData = otherStream.data.slice(0, minLength);
+    otherStream.data = otherStream.data.slice(minLength);
 
-      // Compare.
-      for (let i = 0, len = streamData.length; i < len; i++) {
+    // Compare.
+    for (let i = 0, len = streamData.length; i < len; i++) {
         if (streamData[i] !== otherStreamData[i]) {
-          return callback(null, false);
+        return callback(null, false);
         }
-      }
-
-    } else {
-      stream.data = data;
     }
 
+    } else {
+    stream.data = data;
+    }
+    
 
     stream.pos = newPos;
     if (newPos > otherStream.pos) {
@@ -154,7 +167,7 @@ function createRead(stream, otherStream, callback) {
  * @param {Object} otherStream
  * @param {Function(!Error, Boolean)} callback
  */
-function createOnEnd(stream, otherStream, callback) {
+function createOnEnd(stream, otherStream, status, callback) {
   return () => {
     stream.ended = true;
     if (otherStream.ended) {

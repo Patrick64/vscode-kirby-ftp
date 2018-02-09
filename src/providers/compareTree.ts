@@ -39,9 +39,9 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode>, TextDoc
 			label: element.name,
 			collapsibleState: collapsibleState,
 			command: element.isFolder ? void 0 : {
-				command: 'uploadFile',
+				command: 'kirby.openFile',
 				arguments: [element],
-				title: 'Kirby FTP: Upload'
+				title: 'Kirby FTP: Open'
 			},
 			iconPath: {
 				light: element.isFolder ? path.join(__filename, '..', '..', '..', 'resources', 'light', element.iconName + '.svg') : path.join(__filename, '..', '..', '..', 'resources', 'light', element.iconName + '.svg'),

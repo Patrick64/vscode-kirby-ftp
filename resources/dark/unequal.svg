@@ -49,27 +49,27 @@
      inkscape:current-layer="svg2" />
   <style
      type="text/css"
-     id="style4">.icon-canvas-transparent{opacity:0;fill:#F6F6F6;} .icon-vs-out{opacity:0;fill:#F6F6F6;} .icon-vs-fg{opacity:0;fill:#F0EFF1;} .icon-folder{fill:#C5C5C5;}</style>
+     id="style4">.icon-canvas-transparent{opacity:0;fill:#DE3C4B;} .icon-vs-out{opacity:0;fill:#DE3C4B;} .icon-vs-fg{opacity:0;fill:#DE3C4B;} .icon-folder{fill:#DE3C4B;}</style>
   <path
      class="icon-canvas-transparent"
      d="M16 16h-16v-16h16v16z"
      id="canvas" />
   <rect
-     style="fill:#000000;fill-opacity:1;stroke:#e00000;stroke-width:2.0999999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+     style="fill:#000000;fill-opacity:1;stroke:#DE3C4B;stroke-width:2.0999999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
      id="rect4298"
      width="11.457627"
      height="1.1525424"
      x="2.2711849"
      y="9.7627115" />
   <rect
-     style="fill:#ffaf1e;fill-opacity:1;stroke:#e00000;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+     style="fill:#DE3C4B;fill-opacity:1;stroke:#DE3C4B;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
      id="rect4298-9"
      width="11.457627"
      height="1.1525424"
      x="2.2711868"
      y="4.9152536" />
   <rect
-     style="fill:#ffaf1e;fill-opacity:1;stroke:#e00000;stroke-width:2.0999999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+     style="fill:#DE3C4B;fill-opacity:1;stroke:#DE3C4B;stroke-width:2.0999999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
      id="rect4298-9-0"
      width="15.93164"
      height="0.72860795"
