@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import { ProfileNode } from '../nodes/profileNode';
 const streamEqual = require('../lib/streamEqual');
 require('promise-pause');
+import * as FileCompare from '../lib/fileCompare';
 
 export enum CompareNodeState {
 	
@@ -133,9 +134,10 @@ export class CompareNode implements ITreeNode {
             // setInterval( ()=>{  
 			vscode.window.setStatusBarMessage("Kirby FTP: Comparing " + this.name);
 			
-			return Promise.all([localModel.createReadStream(this.localNode),remoteModel.createReadStream(this.remoteNode)])
-			.then(([localStream, remoteStream]) => {
-				return streamEqual(localStream, remoteStream).then((isEqual) => { localStream.destroy(); remoteStream.destroy(); return isEqual;});
+			return Promise.all([localModel.getBuffer(this.localNode),remoteModel.getBuffer(this.remoteNode)])
+			.then(([localBuffer, remoteBuffer]) => {
+				return FileCompare.compareBuffers(localBuffer,remoteBuffer);
+				// return streamEqual(localStream, remoteStream).then((isEqual) => { localStream.destroy(); remoteStream.destroy(); return isEqual;});
 			}).then((isEqual) => {
 				// localModel.closeStream();
 				// remoteModel.closeStream();
