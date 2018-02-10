@@ -4,7 +4,6 @@ import { setTimeout, setInterval } from 'timers';
 import { ITreeNode } from '../nodes/iTreeNode';
 import * as vscode from 'vscode';
 import { ProfileNode } from '../nodes/profileNode';
-const streamEqual = require('../lib/streamEqual');
 require('promise-pause');
 import * as FileCompare from '../lib/fileCompare';
 
