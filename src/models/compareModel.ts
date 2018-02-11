@@ -283,7 +283,6 @@ export class CompareModel {
 		console.log('FTP refresall is started.');
 		vscode.window.setStatusBarMessage("Kirby FTP: Refreshing files list");
 		return this.doFullRefresh(this.rootNode)
-			.then(this.disconnect.bind(this))
 			.then(() => {
 				console.log('FTP refresall is done.');
 				vscode.window.setStatusBarMessage("Kirby FTP: Finished refreshing files list");
@@ -452,17 +451,14 @@ export class CompareModel {
 		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
 		compareNode.nodeState = CompareNodeState.loading;
 		this.nodeUpdated(compareNode); 
-		return this.connect()
-		.then(() => { 
-			vscode.window.setStatusBarMessage("Kirby FTP: Reading " + compareNode.name + " ..." );
-			vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
-			return this.doStreamUpload(compareNode);
-		})
-		.then(() => { this.disconnect(); })
+		 
+		vscode.window.setStatusBarMessage("Kirby FTP: Reading " + compareNode.name + " ..." );
+		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
+		this.doStreamUpload(compareNode)
 		.then(() => { this.nodeUpdated(null); })
 		.then(() => { vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
 		.catch((err) => { 
-			this.disconnect(); 
+			
 			compareNode.nodeState = CompareNodeState.error; 
 			this.nodeUpdated(compareNode);
 			vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " failed to upload." );
@@ -497,15 +493,10 @@ export class CompareModel {
 		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
 		compareNode.nodeState = CompareNodeState.loading;
 		this.nodeUpdated(compareNode); 
-		return this.connect()
-		.then(() => { 
-			return this.uploadFolderResursive(compareNode);
-		})
-		.then(() => { this.disconnect(); })
+		return this.uploadFolderResursive(compareNode)
 		.then(() => { this.nodeUpdated(null); })
 		.then(() => { vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
 		.catch((err) => { 
-			this.disconnect(); 
 			compareNode.nodeState = CompareNodeState.error; 
 			this.nodeUpdated(compareNode);
 			vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " failed to upload: " + err );
