@@ -38,8 +38,10 @@ export function activate(context: vscode.ExtensionContext) {
     });
    
     vscode.commands.registerCommand('kirby.openFile', (node: ITreeNode) => {
+        node.openDiff();
+        
         vscode.window.setStatusBarMessage("Kirby FTP: Opening diff window");
-       node.openDiff(); 
+       
        
         
     });

@@ -27,6 +27,9 @@ export class ProfileNode implements ITreeNode{
             this );	
     }
 
+    public connect():Promise<void> {
+        return this.compareModel.connect();
+    }
     public get name() {
         return this.nodeName;
     }
