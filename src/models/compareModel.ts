@@ -454,7 +454,7 @@ export class CompareModel {
 		 
 		vscode.window.setStatusBarMessage("Kirby FTP: Reading " + compareNode.name + " ..." );
 		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
-		this.doStreamUpload(compareNode)
+		return this.doStreamUpload(compareNode)
 		.then(() => { this.nodeUpdated(null); })
 		.then(() => { vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
 		.catch((err) => { 

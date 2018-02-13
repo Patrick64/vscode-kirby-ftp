@@ -9,7 +9,7 @@ import { ITreeNode } from '../nodes/iTreeNode';
 import { ProfileNode } from '../nodes/profileNode';
 import { ISettings } from '../modules/config';
 
-export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode>, TextDocumentContentProvider {
+export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode> {
 
 	private _onDidChangeTreeData: EventEmitter<any> = new EventEmitter<any>();
 	readonly onDidChangeTreeData: Event<any> = this._onDidChangeTreeData.event;
@@ -80,10 +80,10 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode>, TextDoc
 		this._onDidChangeTreeData.fire(node);
 	}
 
-	public provideTextDocumentContent(uri: Uri, token: CancellationToken): ProviderResult<string> {
+	// public provideTextDocumentContent(uri: Uri, token: CancellationToken): ProviderResult<string> {
 	// public provideTextDocumentContent(uri: Uri, token: CancellationToken) {
 		// return this.model.getContent(uri);
-	}
+	// }
 
 	public refresh() {
 		// if (this.model) {
