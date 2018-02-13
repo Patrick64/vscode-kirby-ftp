@@ -5,7 +5,7 @@ var pathIsInside = require("path-is-inside");
 import { CompareModel } from '../models/compareModel';
 import { DiskModel } from '../models/diskModel';
 import { FtpModel } from '../models/ftpModel';
-import { CompareNode } from '../models/compareModel';
+import { CompareNode } from '../nodes/compareNode';
 import { ISettings } from '../modules/config';
 
 export class ProfileNode implements ITreeNode{

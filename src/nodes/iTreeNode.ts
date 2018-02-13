@@ -1,4 +1,4 @@
-import { CompareNode } from '../models/compareModel';
+
 
 export interface ITreeNode {
     
