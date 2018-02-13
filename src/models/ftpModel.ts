@@ -4,39 +4,8 @@ import * as Client from 'ftp';
 import * as path from 'path';
 import { IEntry } from '../models/ientry';
 const fse = require('fs-extra')
+import { FtpNode } from '../nodes/ftpNode'
 
-export class FtpNode {
-	private _resource: Uri;
-
-	constructor(private entry, private host: string, private _parent: string) {
-		var uri = `ftp://${host}${_parent}${entry.name}`;
-		this._resource = Uri.parse(uri);
-	}
-
-	public get resource(): Uri {
-		return this._resource;
-	}
-
-	public get path(): string {
-		return path.join(this._parent, this.name);
-	}
-
-	public get name(): string {
-		return this.entry.name;
-	}
-
-	public get isFolder(): boolean {
-		return this.entry.type === 'd' || this.entry.type === 'l';
-	}
-
-	public get dateLastModified(): Date {
-		return this.entry.date;
-	}
-
-	public get size(): number {
-		return this.entry.size;
-	}
-}
 
 export class FtpModel {
 	
