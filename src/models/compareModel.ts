@@ -6,17 +6,27 @@ import * as vscode from 'vscode';
 import { ProfileNode } from '../nodes/profileNode';
 require('promise-pause');
 import { CompareNode, CompareNodeState } from '../nodes/compareNode';
+import { PromiseQueue } from '../modules/promiseQueue';
 
 export class CompareModel {
 	
 	private rootNode:CompareNode;
 	private hasUserRequestedAPause: boolean = false;
+	private promiseQueue:PromiseQueue;
 	
+
+
 	constructor(private localModel, private remoteModel, private nodeUpdated:Function, private profileNode: ProfileNode) {
 		this.rootNode = new CompareNode(localModel.getRootNode(),remoteModel.getRootNode(),"",path.sep,true,null, this);
+		this.promiseQueue = new PromiseQueue(this.onError);
 		//this.refreshAll();
 		// setInterval( () => { this.nodeUpdated(null); }, 1000);
 
+	}
+
+	private onError(err) {
+		vscode.window.showErrorMessage("Kirby FTP: " + err);
+		console.log(err);
 	}
 
 	public connect():Promise<void> {
@@ -42,16 +52,18 @@ export class CompareModel {
 	}
 
 	public refreshAll() {
-		console.log('FTP refresall is started.');
-		vscode.window.setStatusBarMessage("Kirby FTP: Refreshing files list");
-		return this.doFullRefresh(this.rootNode)
-			.then(() => {
-				console.log('FTP refresall is done.');
-				vscode.window.setStatusBarMessage("Kirby FTP: Finished refreshing files list");
-			}).catch(err => {
-				console.log(err)
-				vscode.window.showErrorMessage("Kirby FTP: " + err);
-			});
+		this.promiseQueue.addToQueue(() => {
+			console.log('FTP refresall is started.');
+			vscode.window.setStatusBarMessage("Kirby FTP: Refreshing files list");
+			return this.doFullRefresh(this.rootNode)
+				.then(() => {
+					console.log('FTP refresall is done.');
+					vscode.window.setStatusBarMessage("Kirby FTP: Finished refreshing files list");
+				}).catch(err => {
+					console.log(err)
+					vscode.window.showErrorMessage("Kirby FTP: " + err);
+				});
+		});
 	}
 
 	// public refreshFolder(node:CompareNode) {
@@ -73,7 +85,7 @@ export class CompareModel {
 	// 	});
 	// }
 
-	public refreshFolder(node:CompareNode,isLocal:boolean) {
+	private refreshFolder(node:CompareNode,isLocal:boolean) {
 		var model = isLocal ? this.localModel : this.remoteModel;
 		var localOrRemoteNode = isLocal ? node.localNode : node.remoteNode;
 
@@ -126,11 +138,11 @@ export class CompareModel {
 		}
 	}
 
-	public removeNodelessChildren(node:CompareNode) {
+	private removeNodelessChildren(node:CompareNode) {
 		node.children = node.children.filter( n => (n.remoteNode || n.localNode));
 	}
 
-	public refreshFolderRecursivly(node,isLocal) {
+	private refreshFolderRecursivly(node,isLocal) {
 		
 		return this.refreshFolder(node,isLocal).pause(this.hasUserRequestedAPause ? 500 : 0).then(() => {
 			this.hasUserRequestedAPause = false;
@@ -144,7 +156,7 @@ export class CompareModel {
 		
 	}
 
-	public doComparisonsRecursivly(node) {
+	private doComparisonsRecursivly(node) {
 
 		var compareAllFiles = () => node.children
 			.filter( c => !c.isFolder )
@@ -171,7 +183,7 @@ export class CompareModel {
 		
 	}
 
-	public doFullRefresh(node:CompareNode) {
+	private doFullRefresh(node:CompareNode) {
 		return this.refreshFolderRecursivly(node,true)
 		.then(() => this.nodeUpdated(null))
 		.pause(500)
@@ -209,24 +221,25 @@ export class CompareModel {
 		});
 	}
 
-	public uploadFile(compareNode:CompareNode):Promise<void> {
-		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
-		compareNode.nodeState = CompareNodeState.loading;
+	public uploadFile(compareNode:CompareNode):Promise<any> {
+		compareNode.nodeState = CompareNodeState.loading; // signal to user that it's uploading 
 		this.nodeUpdated(compareNode); 
-		 
-		vscode.window.setStatusBarMessage("Kirby FTP: Reading " + compareNode.name + " ..." );
-		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
-		return this.doStreamUpload(compareNode)
-		.then(() => { this.nodeUpdated(null); })
-		.then(() => { vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
-		.catch((err) => { 
-			
-			compareNode.nodeState = CompareNodeState.error; 
-			this.nodeUpdated(compareNode);
-			vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " failed to upload." );
-			return Promise.reject(err); 
-			
+
+		return this.promiseQueue.addToQueue(() => {
+			vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
+			return this.doStreamUpload(compareNode)
+			.then(() => { this.nodeUpdated(null); })
+			.then(() => { vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
+			.catch((err) => { 
+				
+				compareNode.nodeState = CompareNodeState.error; 
+				this.nodeUpdated(compareNode);
+				vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " failed to upload: " + err );
+				// return Promise.reject(err); 
+				
+			})	
 		})
+		
 	}
 
 	// upload file and create directory if neccesary
@@ -252,19 +265,23 @@ export class CompareModel {
 	public downloadFile(compareNode:CompareNode) {}
 
 	public uploadFolder(compareNode:CompareNode) {
-		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
+		
 		compareNode.nodeState = CompareNodeState.loading;
 		this.nodeUpdated(compareNode); 
-		return this.uploadFolderResursive(compareNode)
-		.then(() => { this.nodeUpdated(null); })
-		.then(() => { vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
-		.catch((err) => { 
-			compareNode.nodeState = CompareNodeState.error; 
-			this.nodeUpdated(compareNode);
-			vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " failed to upload: " + err );
-			return Promise.reject(err); 
-			
+		this.promiseQueue.addToQueue(() => {
+			vscode.window.setStatusBarMessage("Kirby FTP: Uploading folder " + compareNode.name + " ..." );
+			return this.uploadFolderResursive(compareNode)
+			.then(() => { this.nodeUpdated(null); })
+			.then(() => { vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
+			.catch((err) => { 
+				compareNode.nodeState = CompareNodeState.error; 
+				this.nodeUpdated(compareNode);
+				vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " failed to upload: " + err );
+				return Promise.reject(err); 
+				
+			})
 		})
+		
 
 	}
 
@@ -280,7 +297,7 @@ export class CompareModel {
 	}
 	public downloadFolder(compareNode:CompareNode) {}
 	
-	public createRemoteFolder(compareNode:CompareNode):Thenable<void> {
+	private createRemoteFolder(compareNode:CompareNode):Thenable<void> {
 		
 		if (compareNode.remoteNode || !compareNode.parentNode) {
 			return Promise.resolve();
@@ -341,42 +358,44 @@ export class CompareModel {
 	
 
 	public openDiff(node) {
-		
-		if (node.localNode && node.remoteNode) {
-			this.setNodeIsLoading(node,true);
-			return Promise.all([this.localModel.getUri(node.localNode,this.profileNode.workspaceFolder),this.remoteModel.getUri(node.remoteNode,this.profileNode.workspaceFolder)]) 
-			.then(([localUri,remoteUri]) => { 
-				try { 
-					this.setNodeIsLoading(node,false);
-					vscode.commands.executeCommand("vscode.diff",localUri,remoteUri,  node.name + " <-> " + " Remote", { originalEditable:true, readOnly:false } );  
-				} catch(err) { 
-					return Promise.reject(err); 
-				}
-			}).catch((err) => { 
-				vscode.window.showErrorMessage("Kirby FTP: " + err); 
-				console.log(err); 
-				this.setNodeIsLoading(node,false);
-			});
+		this.setNodeIsLoading(node,true);
+		this.promiseQueue.addToQueue(() => {
 			
-		} else if (node.localNode || node.remoteNode) {
-			this.setNodeIsLoading(node,true);
-			var fileNode = node.localNode ? node.localNode : node.remoteNode;
-			var fileModel = node.localNode ? this.localModel : this.remoteModel;
-			return fileModel.getUri(fileNode,this.profileNode.workspaceFolder)
-			.then((uri) => { 
-				try { 
+			if (node.localNode && node.remoteNode) {
+				
+				return Promise.all([this.localModel.getUri(node.localNode,this.profileNode.workspaceFolder),this.remoteModel.getUri(node.remoteNode,this.profileNode.workspaceFolder)]) 
+				.then(([localUri,remoteUri]) => { 
+					try { 
+						this.setNodeIsLoading(node,false);
+						vscode.commands.executeCommand("vscode.diff",localUri,remoteUri,  node.name + " <-> " + " Remote", { originalEditable:true, readOnly:false } );  
+					} catch(err) { 
+						return Promise.reject(err); 
+					}
+				}).catch((err) => { 
+					vscode.window.showErrorMessage("Kirby FTP: " + err); 
+					console.log(err); 
 					this.setNodeIsLoading(node,false);
-					return vscode.workspace.openTextDocument(uri).then((doc) => vscode.window.showTextDocument(doc));
-				} catch(err) { 
-					return Promise.reject(err); 
-				}
-			}).catch((err) => { 
-				vscode.window.showErrorMessage("Kirby FTP: " + err); 
-				console.log(err); 
-				this.setNodeIsLoading(node,false);
-			});
-		}
-		
+				});
+				
+			} else if (node.localNode || node.remoteNode) {
+				this.setNodeIsLoading(node,true);
+				var fileNode = node.localNode ? node.localNode : node.remoteNode;
+				var fileModel = node.localNode ? this.localModel : this.remoteModel;
+				return fileModel.getUri(fileNode,this.profileNode.workspaceFolder)
+				.then((uri) => { 
+					try { 
+						this.setNodeIsLoading(node,false);
+						return vscode.workspace.openTextDocument(uri).then((doc) => vscode.window.showTextDocument(doc));
+					} catch(err) { 
+						return Promise.reject(err); 
+					}
+				}).catch((err) => { 
+					vscode.window.showErrorMessage("Kirby FTP: " + err); 
+					console.log(err); 
+					this.setNodeIsLoading(node,false);
+				});
+			} else { throw "Orphan node."; }
+		});
 	}
 
 }
