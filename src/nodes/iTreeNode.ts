@@ -9,7 +9,7 @@ export interface ITreeNode {
     isFolder: boolean;
     iconName: string;
     updateFolderState();
-    getChildNodes(): Thenable<ITreeNode[]>;
+    getChildNodes(): Promise<ITreeNode[]>;
     contextValue:string;
     hasChildren:boolean;
     isRootNode:boolean;

@@ -39,7 +39,7 @@ function getCompareNodeStateString(state:CompareNodeState):string {
 export class CompareNode implements ITreeNode {
 
 	private _resource: Uri;
-	public children:CompareNode[] = [];
+	public _children:CompareNode[] = [];
 	private profiles:ITreeNode;
 	public nodeState: CompareNodeState = CompareNodeState.loading;
 	public isLoading:boolean = false;
@@ -47,11 +47,15 @@ export class CompareNode implements ITreeNode {
 	
 	// private _rando:number;
 
-	constructor(public localNode, public remoteNode, private _parent: string, private filename: string, private _isFolder: boolean, public parentNode: CompareNode, public model:CompareModel) {
+	constructor(public localNode, 
+		public remoteNode, 
+		protected _parent: string, 
+		protected filename: string, 
+		protected _isFolder: boolean, 
+		public parentNode: CompareNode, 
+		public compareModel:CompareModel) {
 		
-		// var uri = `ftp://${host}${_parent}${entry.name}`;
-		// this._resource = Uri.parse(uri);
-		// this.rando = (Date.now());
+		
 		
 	}
 
@@ -87,6 +91,14 @@ export class CompareNode implements ITreeNode {
 		return !this.parentNode;
 	}
 
+	public get children() {
+		return this._children;
+	}
+
+	public set children(c) {
+		c = this._children;
+	}
+
 	public get contextValue():string {
 
 		if (this.isFolder) 
@@ -97,9 +109,9 @@ export class CompareNode implements ITreeNode {
 
 	public upload() {
 		if (this.isFolder) {
-			return this.model.uploadFolder(this);
+			return this.compareModel.uploadFolder(this);
 		} else {
-			return this.model.uploadFile(this).catch(err => {
+			return this.compareModel.uploadFile(this).catch(err => {
 				console.log(err);
 				vscode.window.showErrorMessage("Upload of " + this.name + " failed: " + err);
 			});
@@ -108,9 +120,9 @@ export class CompareNode implements ITreeNode {
 
 	public download() {
 		if (this.isFolder) {
-			return this.model.downloadFolder(this);
+			return this.compareModel.downloadFolder(this);
 		} else {
-			return this.model.downloadFile(this);
+			return this.compareModel.downloadFile(this);
 		}
 	}
 
@@ -153,7 +165,7 @@ export class CompareNode implements ITreeNode {
 	}
 
 	public openDiff() {
-		this.model.openDiff(this);
+		this.compareModel.openDiff(this);
 	}
 
 	public get iconName(): string {
@@ -199,7 +211,7 @@ export class CompareNode implements ITreeNode {
 	}
 
 	public getChildNodes() {
-		return Promise.resolve(this.model.sort(this.children));
+		return Promise.resolve(this.compareModel.sort(this.children));
 	}
 
 	public updateFolderState() {

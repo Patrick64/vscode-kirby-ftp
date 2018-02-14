@@ -3,21 +3,21 @@ import * as path from 'path';
 import { setTimeout, setInterval } from 'timers';
 import { ITreeNode } from '../nodes/iTreeNode';
 import * as vscode from 'vscode';
-import { ProfileNode } from '../nodes/profileNode';
+import { ProfileNode, ConnectionStatus } from '../nodes/profileNode';
 require('promise-pause');
 import { CompareNode, CompareNodeState } from '../nodes/compareNode';
 import { PromiseQueue } from '../modules/promiseQueue';
 
 export class CompareModel {
 	
-	private rootNode:CompareNode;
+	
 	private hasUserRequestedAPause: boolean = false;
 	private promiseQueue:PromiseQueue;
 	
 
-
+	
 	constructor(private localModel, private remoteModel, private nodeUpdated:Function, private profileNode: ProfileNode) {
-		this.rootNode = new CompareNode(localModel.getRootNode(),remoteModel.getRootNode(),"",path.sep,true,null, this);
+		
 		this.promiseQueue = new PromiseQueue(this.onError);
 		//this.refreshAll();
 		// setInterval( () => { this.nodeUpdated(null); }, 1000);
@@ -31,7 +31,17 @@ export class CompareModel {
 
 	public connect():Promise<void> {
 		vscode.window.setStatusBarMessage("Kirby FTP: Connecting to remote...");
-		return Promise.all([this.localModel.connect(), this.remoteModel.connect()]).then(() => {});
+		return Promise.all([this.localModel.connect(), this.remoteModel.connect()]).then(() => {})
+		.then(() => {
+			this.profileNode.connectionStatus = ConnectionStatus.Connected;
+			this.nodeUpdated(this.profileNode);
+			
+		})
+		.catch((err) => {
+			this.profileNode.connectionStatus = ConnectionStatus.ConnectFailed;
+			this.nodeUpdated(this.profileNode);
+			return Promise.reject(err);
+		})
 	
 	}
 
@@ -46,16 +56,16 @@ export class CompareModel {
 	}
 
 
-	public get roots(): Thenable<ITreeNode[]> {
-		// return this.getChildren(null);
-		return this.rootNode.getChildNodes();
-	}
+	// public get roots(): Thenable<ITreeNode[]> {
+	// 	// return this.getChildren(null);
+	// 	return this.profileNode.getChildNodes();
+	// }
 
 	public refreshAll() {
 		this.promiseQueue.addToQueue(() => {
 			console.log('FTP refresall is started.');
 			vscode.window.setStatusBarMessage("Kirby FTP: Refreshing files list");
-			return this.doFullRefresh(this.rootNode)
+			return this.doFullRefresh(this.profileNode)
 				.then(() => {
 					console.log('FTP refresall is done.');
 					vscode.window.setStatusBarMessage("Kirby FTP: Finished refreshing files list");
@@ -89,7 +99,7 @@ export class CompareModel {
 		var model = isLocal ? this.localModel : this.remoteModel;
 		var localOrRemoteNode = isLocal ? node.localNode : node.remoteNode;
 
-		var isRootNode = (node == this.rootNode);
+		var isRootNode = (node == this.profileNode);
 		var parentPath = !isRootNode ? node.path : path.sep;
 		if (isRootNode || localOrRemoteNode) {
 			var getNodesFunc = isRootNode ? model.roots : model.getChildren(localOrRemoteNode);

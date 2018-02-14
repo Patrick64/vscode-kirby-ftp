@@ -178,7 +178,9 @@ export class FtpModel {
 					stream.on('end', function () {
 						c( Buffer.concat(bufs));
 					});
-					stream.on("error", e);
+					stream.on("error", (err)=>{
+						e(err);
+					});
 				} catch(err) {
 					e(err);
 				}

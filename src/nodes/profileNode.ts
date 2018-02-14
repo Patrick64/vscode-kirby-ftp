@@ -8,23 +8,44 @@ import { FtpModel } from '../models/ftpModel';
 import { CompareNode } from '../nodes/compareNode';
 import { ISettings } from '../modules/config';
 
-export class ProfileNode implements ITreeNode{
-    private children:CompareNode[] = [];
-    private compareModel:CompareModel;
+
+export enum ConnectionStatus {
+    Connecting=1,
+    Connected=2,
+    ConnectFailed=3
+}
+
+export class ProfileNode extends CompareNode {
+    
+    
     private nodeName:string;
-    contextValue = "profile";
+    public connectionStatus:ConnectionStatus = ConnectionStatus.Connecting;
     constructor(private profileSettings:ISettings,private nodeUpdated:Function) {
+        // just call super function will nulls for now, we'll add the reuiqred values below
+        super(null,null,"",path.sep,true,null, null);
+        
         var workspaceFolder = profileSettings.workspaceFolder;
         var settings = profileSettings.settings;
         var fullLocalPath = path.join(workspaceFolder.uri.fsPath,settings.localPath ? settings.localPath : '.');
         if (!pathIsInside(fullLocalPath, workspaceFolder.uri.fsPath)) throw("localPath settings must be within workspace directory");
         //this.nodeName = workspaceFolder.name + " ↔ ️" + settings.protocol + '://' + settings.host + settings.remotePath;
         this.nodeName =   settings.host;
+        var remoteModel = new FtpModel(settings.host, settings.username, settings.password,settings.port,settings.remotePath);
+        var localModel = new DiskModel(fullLocalPath);
         this.compareModel = new CompareModel(
-            new DiskModel(fullLocalPath), 
-            new FtpModel(settings.host, settings.username, settings.password,settings.port,settings.remotePath),
+            localModel,
+            remoteModel,
             nodeUpdated,
             this );	
+        // setup values for this being CompareNode
+        this.localNode = localModel.getRootNode();
+        this.remoteNode = remoteModel.getRootNode(); 
+        this._parent = "";
+        this.filename = path.sep; 
+        this._isFolder = true;
+        this.parentNode = null;
+        
+        
     }
 
     public connect():Promise<void> {
@@ -42,12 +63,12 @@ export class ProfileNode implements ITreeNode{
     }
 
     public get iconName() {
-        return "profile";
+        if (this.connectionStatus == ConnectionStatus.Connecting) return "loading";
+        else if (this.connectionStatus == ConnectionStatus.Connected) return "profile";
+        else if (this.connectionStatus == ConnectionStatus.ConnectFailed) return "profile_fail";
+        
     }
 
-    public get path() {
-        return 'dunno';
-    }
 
     public get workspaceFolder() {
         return this.profileSettings.workspaceFolder;
@@ -57,12 +78,16 @@ export class ProfileNode implements ITreeNode{
         // don't need to do anything
     }
 
-    public getChildNodes():Thenable<ITreeNode[]> {
-        return this.compareModel.roots;
-    }
+    // public getChildNodes():Promise<ITreeNode[]> {
+    //     return Promise.resolve(this.children);
+    // }
+
     public get hasChildren():boolean {
 		return true;
     }
+
+    
+
     
     public refreshAll() {
         return this.compareModel.refreshAll();
