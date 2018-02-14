@@ -160,7 +160,7 @@ export class FtpModel {
 	}
 
 
-	public getBuffer(node:FtpNode): Thenable<Buffer> {
+	public getBuffer(node:FtpNode): Promise<Buffer> {
 		
 		return new Promise((c, e) => {
 			this.client.get(node.path, (err, stream) => {
@@ -178,6 +178,7 @@ export class FtpModel {
 					stream.on('end', function () {
 						c( Buffer.concat(bufs));
 					});
+					stream.on("error", e);
 				} catch(err) {
 					e(err);
 				}
@@ -212,8 +213,11 @@ export class FtpModel {
 
 	public createReadStream(node:FtpNode) {
 		return new Promise((resolve,reject) => {
+			let wait = setTimeout(() => {
+				reject("Timeout")
+			},2000);
 			this.client.get(node.path, function(err, stream) {
-				
+				clearTimeout(wait);
 				if (err) {
 					reject(err);
 				} else {
@@ -242,7 +246,7 @@ export class FtpModel {
 
 	public getUri(node:FtpNode,workspaceFolder:WorkspaceFolder):Promise<Uri> {
 		var filepath = path.join(workspaceFolder.uri.fsPath, ".vscode/kirby-ftp/tmp", node.name);
-		return this.getContentFromNode(node).then((content) => 
+		return this.getBuffer(node).then((content) => 
 			fse.outputFile(filepath,content).then(() => 
 				Uri.file(filepath)
 			)
