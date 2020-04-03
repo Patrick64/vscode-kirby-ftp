@@ -43,6 +43,9 @@ export class CompareNode implements ITreeNode {
 	private profiles:ITreeNode;
 	public nodeState: CompareNodeState = CompareNodeState.loading;
 	public isLoading:boolean = false;
+	
+	/** if we couldn't connect to this node for some reson  */
+	public isFailed:boolean = false; 
 //	contextValue = 'file';
 	
 	// private _rando:number;

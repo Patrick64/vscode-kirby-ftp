@@ -17,7 +17,7 @@ export enum ConnectionStatus {
 
 export class ProfileNode extends CompareNode {
     
-    
+    public isFailed:boolean = false; 
     private nodeName:string;
     public connectionStatus:ConnectionStatus = ConnectionStatus.Connecting;
     constructor(private profileSettings:ISettings,private nodeUpdated:Function) {
@@ -62,10 +62,15 @@ export class ProfileNode extends CompareNode {
         return true;
     }
 
+    public get path(): string {
+		return "";
+	}
+
     public get iconName() {
-        if (this.connectionStatus == ConnectionStatus.Connecting) return "loading";
+        if (this.isFailed || this.connectionStatus == ConnectionStatus.ConnectFailed) return "profile_fail"
+        else if (this.connectionStatus == ConnectionStatus.Connecting) return "loading";
         else if (this.connectionStatus == ConnectionStatus.Connected) return "profile";
-        else if (this.connectionStatus == ConnectionStatus.ConnectFailed) return "profile_fail";
+        
         
     }
 
@@ -86,23 +91,15 @@ export class ProfileNode extends CompareNode {
 		return true;
     }
 
-    
+    public get contextValue():string {
+        return "profile_node";
+         
+    }
 
     
     public refreshAll() {
         return this.compareModel.refreshAll();
     }
-
-    public uploadFile(compareNode:CompareNode) {
-		
-	}
-
-	public downloadFile(compareNode:CompareNode) {}
-	public uploadFolder(compareNode:CompareNode) {}
-	public downloadFolder(compareNode:CompareNode) {}
-
-    public upload() {}
-    public download() {}
 
     public userRequestsPause() {
         this.compareModel.userRequestsPause();

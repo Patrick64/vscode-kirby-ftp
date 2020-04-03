@@ -97,15 +97,21 @@ export class DiskModel {
 	}
 
 	public getChildren(node: DiskNode): Thenable<DiskNode[]> {
-        var parentDir = node ? node.path : this.rootDir;
-        return fse.readdir(parentDir).then( filenames => {
-            let promises = filenames.map(filename => fse.stat( path.join(parentDir, filename) ) );
-            return Promise.all(promises).then(  stats => {
-                // var filename = list[i];
-                return stats.map( (stat:any,i) => new DiskNode({...stat, name:filenames[i], type: (stat.isDirectory() ? 'd' : 'f') }, parentDir ))
-            });
-            
-        })
+		try {
+			var parentDir = node ? node.path : this.rootDir;
+			return fse.readdir(parentDir).then( filenames => {
+				let promises = filenames.map(filename => fse.stat( path.join(parentDir, filename) ) );
+				return Promise.all(promises).then(  stats => {
+					// var filename = list[i];
+					return stats.map( (stat:any,i) => new DiskNode({...stat, name:filenames[i], type: (stat.isDirectory() ? 'd' : 'f') }, parentDir ))
+				});
+				
+			}).catch(err => {
+				return Promise.reject(err);
+			})
+		} catch (err) {
+			return err;
+		}
 		// return this.connect().then(client => {
 		// 	return new Promise((c, e) => {
 		// 		client.list(node.path, (err, list) => {

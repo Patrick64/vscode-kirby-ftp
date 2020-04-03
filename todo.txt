@@ -1,3 +1,18 @@
+Done:
+Upload file
+Upload folder
+Allow for more than one ftp profile
+
+todo:
+reload on config file changed
+Upload FTP file on edit
+Download file
+Download folder
+Sync file/folder
+use https://github.com/JamesMGreene/nestdb
+cancel/restart requests
+make diff readony for now
+
 https://www.npmjs.com/package/node-diff3
 
 https://www.npmjs.com/package/diff
@@ -21,7 +36,7 @@ Make menu for files/folders:
 
 Add config file
 IF there is no config file have message on treeview that opens the config file
-Allow for more than one ftp profile
+
 add sftp
 Compare file view
 Use this for config file https://www.npmjs.com/package/comment-json

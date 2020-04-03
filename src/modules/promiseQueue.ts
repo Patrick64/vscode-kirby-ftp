@@ -2,6 +2,10 @@
 // FTP connections require you to make one request at a time oterwise it goes wrong so we need to queue up all the operation such as Refresh, upload etc
 
 
+export class PromiseState {
+    public isCancelled:boolean = false;
+}
+
 export class PromiseQueue {
     // array of functions to be called
     private queue:Array<()=>Promise<void>> = [];

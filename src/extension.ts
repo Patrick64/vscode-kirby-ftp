@@ -54,13 +54,14 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showErrorMessage(error);
     });
 
-    var promise1:Promise<void> = new Promise(function(resolve, reject) {
-        throw 'Uh-oh!';
-      });
+    // var promise1:Promise<void> = new Promise(function(resolve, reject) {
+    //     debugger;
+    //     throw 'Uh-oh!';
+    //   });
       
-      promise1.catch(function(error) {
-        console.log(error);
-      });
+    //   promise1.catch(function(error) {
+    //     console.log(error);
+    //   });
 
     // vscode.commands.registerCommand('openFtpResource', (node: CompareNode) => {
 	// 	vscode.workspace.openTextDocument(node.resource).then(document => {

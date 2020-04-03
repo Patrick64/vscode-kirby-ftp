@@ -120,6 +120,10 @@
         {
           "command": "kirby.uploadFile",
           "when": "view == compareView && viewItem == folder_conflict"
+        },
+        {
+          "command": "kirby.uploadFile",
+          "when": "view == compareView && viewItem == profile_node"
         }
       ]
     }
@@ -129,13 +133,15 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "postinstall": "node ./node_modules/vscode/bin/install",
-    "test": "npm run compile && node ./node_modules/vscode/bin/test"
+    "test": "npm run compile && node ./node_modules/vscode/bin/test",
+    "update-docs": "./node_modules/typedoc/bin/typedoc --out docs src"
   },
   "devDependencies": {
-    "typescript": "^2.6.1",
-    "vscode": "^1.1.6",
+    "@types/mocha": "^2.2.42",
     "@types/node": "^7.0.43",
-    "@types/mocha": "^2.2.42"
+    "typedoc": "^0.17.3",
+    "typescript": "^2.6.1",
+    "vscode": "^1.1.6"
   },
   "dependencies": {
     "fs-extra": "^5.0.0",
