@@ -133,7 +133,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "test": "npm run compile && node ./node_modules/vscode/bin/test",
-    "update-docs": "./node_modules/typedoc/bin/typedoc --out docs src"
+    "update-docs": "./node_modules/typedoc/bin/typedoc --out docs/typedoc src && echo \"\" > ./docs/.nojekyll"
   },
   "devDependencies": {
     "@types/mocha": "^2.2.42",

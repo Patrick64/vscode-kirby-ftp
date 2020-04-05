@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>ISettings | kirby-ftp</title>
+	<title>ConnectionStatus | kirby-ftp</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -56,86 +56,63 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_modules_config_.html">&quot;modules/config&quot;</a>
+					<a href="../modules/_nodes_profilenode_.html">&quot;nodes/profileNode&quot;</a>
 				</li>
 				<li>
-					<a href="_modules_config_.isettings.html">ISettings</a>
+					<a href="_nodes_profilenode_.connectionstatus.html">ConnectionStatus</a>
 				</li>
 			</ul>
-			<h1>Interface ISettings</h1>
+			<h1>Enumeration ConnectionStatus</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
-			<section class="tsd-panel tsd-hierarchy">
-				<h3>Hierarchy</h3>
-				<ul class="tsd-hierarchy">
-					<li>
-						<span class="target">ISettings</span>
-					</li>
-				</ul>
-			</section>
 			<section class="tsd-panel-group tsd-index-group">
 				<h2>Index</h2>
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Properties</h3>
+							<h3>Enumeration members</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_modules_config_.isettings.html#settings" class="tsd-kind-icon">settings</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_modules_config_.isettings.html#workspacefolder" class="tsd-kind-icon">workspace<wbr>Folder</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="_nodes_profilenode_.connectionstatus.html#connectfailed" class="tsd-kind-icon">Connect<wbr>Failed</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="_nodes_profilenode_.connectionstatus.html#connected" class="tsd-kind-icon">Connected</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="_nodes_profilenode_.connectionstatus.html#connecting" class="tsd-kind-icon">Connecting</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
-				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="settings" class="tsd-anchor"></a>
-					<h3>settings</h3>
-					<div class="tsd-signature tsd-kind-icon">settings<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>host<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>localPath<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>password<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>port<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>protocol<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>remotePath<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>username<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></div>
+				<h2>Enumeration members</h2>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="connectfailed" class="tsd-anchor"></a>
+					<h3>Connect<wbr>Failed</h3>
+					<div class="tsd-signature tsd-kind-icon">Connect<wbr>Failed<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = 3</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Patrick64/vscode-kirby-ftp/blob/4205e13/src/modules/config.ts#L36">modules/config.ts:36</a></li>
+							<li>Defined in <a href="https://github.com/Patrick64/vscode-kirby-ftp/blob/004eafd/src/nodes/profileNode.ts#L15">nodes/profileNode.ts:15</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-type-declaration">
-						<h4>Type declaration</h4>
-						<ul class="tsd-parameters">
-							<li class="tsd-parameter">
-								<h5><span class="tsd-flag ts-flagOptional">Optional</span> host<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5><span class="tsd-flag ts-flagOptional">Optional</span> local<wbr>Path<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5><span class="tsd-flag ts-flagOptional">Optional</span> password<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5><span class="tsd-flag ts-flagOptional">Optional</span> port<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5>protocol<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5><span class="tsd-flag ts-flagOptional">Optional</span> remote<wbr>Path<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5><span class="tsd-flag ts-flagOptional">Optional</span> username<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
-							</li>
-						</ul>
-					</div>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="workspacefolder" class="tsd-anchor"></a>
-					<h3>workspace<wbr>Folder</h3>
-					<div class="tsd-signature tsd-kind-icon">workspace<wbr>Folder<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">WorkspaceFolder</span></div>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="connected" class="tsd-anchor"></a>
+					<h3>Connected</h3>
+					<div class="tsd-signature tsd-kind-icon">Connected<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = 2</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/Patrick64/vscode-kirby-ftp/blob/4205e13/src/modules/config.ts#L35">modules/config.ts:35</a></li>
+							<li>Defined in <a href="https://github.com/Patrick64/vscode-kirby-ftp/blob/004eafd/src/nodes/profileNode.ts#L14">nodes/profileNode.ts:14</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="connecting" class="tsd-anchor"></a>
+					<h3>Connecting</h3>
+					<div class="tsd-signature tsd-kind-icon">Connecting<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = 1</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/Patrick64/vscode-kirby-ftp/blob/004eafd/src/nodes/profileNode.ts#L13">nodes/profileNode.ts:13</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -168,7 +145,7 @@
 					<li class=" tsd-kind-module">
 						<a href="../modules/_models_sftpmodel_.html">&quot;models/sftp<wbr>Model&quot;</a>
 					</li>
-					<li class="current tsd-kind-module">
+					<li class=" tsd-kind-module">
 						<a href="../modules/_modules_config_.html">&quot;modules/config&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
@@ -186,7 +163,7 @@
 					<li class=" tsd-kind-module">
 						<a href="../modules/_nodes_itreenode_.html">&quot;nodes/i<wbr>Tree<wbr>Node&quot;</a>
 					</li>
-					<li class=" tsd-kind-module">
+					<li class="current tsd-kind-module">
 						<a href="../modules/_nodes_profilenode_.html">&quot;nodes/profile<wbr>Node&quot;</a>
 					</li>
 					<li class=" tsd-kind-module">
@@ -204,39 +181,30 @@
 				<ul class="before-current">
 				</ul>
 				<ul class="current">
-					<li class="current tsd-kind-interface tsd-parent-kind-module">
-						<a href="_modules_config_.isettings.html" class="tsd-kind-icon">ISettings</a>
+					<li class="current tsd-kind-enum tsd-parent-kind-module">
+						<a href="_nodes_profilenode_.connectionstatus.html" class="tsd-kind-icon">Connection<wbr>Status</a>
 						<ul>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_modules_config_.isettings.html#settings" class="tsd-kind-icon">settings</a>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="_nodes_profilenode_.connectionstatus.html#connectfailed" class="tsd-kind-icon">Connect<wbr>Failed</a>
 							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_modules_config_.isettings.html#workspacefolder" class="tsd-kind-icon">workspace<wbr>Folder</a>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="_nodes_profilenode_.connectionstatus.html#connected" class="tsd-kind-icon">Connected</a>
+							</li>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="_nodes_profilenode_.connectionstatus.html#connecting" class="tsd-kind-icon">Connecting</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported">
-						<a href="../modules/_modules_config_.html#defaultconfig" class="tsd-kind-icon">default<wbr>Config</a>
+					<li class=" tsd-kind-class tsd-parent-kind-module">
+						<a href="../classes/_nodes_profilenode_.profilenode.html" class="tsd-kind-icon">Profile<wbr>Node</a>
 					</li>
 					<li class=" tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported">
-						<a href="../modules/_modules_config_.html#fse" class="tsd-kind-icon">fse</a>
+						<a href="../modules/_nodes_profilenode_.html#path" class="tsd-kind-icon">path</a>
 					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-module">
-						<a href="../modules/_modules_config_.html#editconfig" class="tsd-kind-icon">edit<wbr>Config</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-module">
-						<a href="../modules/_modules_config_.html#getallprofiles" class="tsd-kind-icon">get<wbr>All<wbr>Profiles</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-module tsd-is-not-exported">
-						<a href="../modules/_modules_config_.html#issettingsprofilevalid" class="tsd-kind-icon">is<wbr>Settings<wbr>Profile<wbr>Valid</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-module">
-						<a href="../modules/_modules_config_.html#newconfig" class="tsd-kind-icon">new<wbr>Config</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-module tsd-is-not-exported">
-						<a href="../modules/_modules_config_.html#readsettingsjson" class="tsd-kind-icon">read<wbr>Settings<wbr>Json</a>
+					<li class=" tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported">
+						<a href="../modules/_nodes_profilenode_.html#pathisinside" class="tsd-kind-icon">path<wbr>IsInside</a>
 					</li>
 				</ul>
 			</nav>
@@ -252,11 +220,10 @@
 				<li class="tsd-kind-function"><span class="tsd-kind-icon">Function</span></li>
 			</ul>
 			<ul class="tsd-legend">
-				<li class="tsd-kind-interface"><span class="tsd-kind-icon">Interface</span></li>
-				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
 			</ul>
 			<ul class="tsd-legend">
-				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
+				<li class="tsd-kind-interface"><span class="tsd-kind-icon">Interface</span></li>
 			</ul>
 			<ul class="tsd-legend">
 				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
