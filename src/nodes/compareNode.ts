@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import * as FileCompare from '../lib/fileCompare';
 
 export enum CompareNodeState {
-	
+	unknown = 0,
 	equal = 200,
 	localOnly = 300,
 	remoteOnly = 400,
@@ -17,7 +17,6 @@ export enum CompareNodeState {
 	bothChanged = 800,
 	conflict = 900,
 	error = 1000,
-	loading = 1100
 }
 
 
@@ -31,7 +30,7 @@ function getCompareNodeStateString(state:CompareNodeState):string {
 	if (state == CompareNodeState.bothChanged) return 'bothChanged';
 	if (state == CompareNodeState.conflict) return 'conflict';
 	if (state == CompareNodeState.error) return 'error';
-	if (state == CompareNodeState.loading) return 'loading';
+	if (state == CompareNodeState.unknown) return 'loading';
 	return '';
 }
 
@@ -41,11 +40,12 @@ export class CompareNode implements ITreeNode {
 	private _resource: Uri;
 	public _children:CompareNode[] = [];
 	private profiles:ITreeNode;
-	public nodeState: CompareNodeState = CompareNodeState.loading;
+	public nodeState: CompareNodeState = CompareNodeState.unknown;
 	public isLoading:boolean = false;
 	
 	/** if we couldn't connect to this node for some reson  */
 	public isFailed:boolean = false; 
+	
 //	contextValue = 'file';
 	
 	// private _rando:number;
@@ -121,6 +121,7 @@ export class CompareNode implements ITreeNode {
 		}
 	}
 
+
 	public download() {
 		if (this.isFolder) {
 			return this.compareModel.downloadFolder(this);
@@ -132,7 +133,7 @@ export class CompareNode implements ITreeNode {
 
 	public doComparison(localModel, remoteModel):Thenable<void> {
 		if (this.isFolder) {
-			this.nodeState = CompareNodeState.loading; // leave until updateFolderState is called.
+			this.nodeState = CompareNodeState.unknown; // leave until updateFolderState is called.
         } else if (!this.localNode && !this.remoteNode) {
             this.nodeState = CompareNodeState.error;
         } else	if (!this.localNode) {
@@ -140,7 +141,7 @@ export class CompareNode implements ITreeNode {
         } else if (!this.remoteNode) {
             this.nodeState = CompareNodeState.localOnly;
         } else if (this.isFolder) {
-            this.nodeState = CompareNodeState.loading; // leave until updateFolderState is called.
+            this.nodeState = CompareNodeState.unknown; // leave until updateFolderState is called.
         } else if (this.localNode.size != this.remoteNode.size)  {
             this.nodeState = CompareNodeState.unequal;
         } else {
@@ -173,6 +174,7 @@ export class CompareNode implements ITreeNode {
 
 	public get iconName(): string {
 		if (this.isLoading) return 'loading';
+		if (this.isFailed) return 'error';
 		if (this.isFolder) {
 			// if (!this.localNode && !this.remoteNode) {
 			// 	return 'error';
@@ -182,7 +184,7 @@ export class CompareNode implements ITreeNode {
 			// 	return 'folder-local';
 			// } else {
 				switch (this.nodeState) {
-					case CompareNodeState.loading: return 'loading'; 
+					case CompareNodeState.unknown: return 'loading'; 
 					case CompareNodeState.error: return 'error'; 
 					case CompareNodeState.equal: return 'folder-equal'; 
 					case CompareNodeState.conflict: return 'folder-conflict'; 
@@ -196,7 +198,7 @@ export class CompareNode implements ITreeNode {
 			// }
 		}
 		switch (this.nodeState) {
-			case CompareNodeState.loading: return 'loading'; 
+			case CompareNodeState.unknown: return 'loading'; 
 			case CompareNodeState.error: return 'error'; 
 			case CompareNodeState.equal: return 'equal'; 
 			case CompareNodeState.conflict: return 'conflict'; 
@@ -234,8 +236,8 @@ export class CompareNode implements ITreeNode {
 				// if (childNode.nodeState > newState) return childNode.nodeState; else return newState;
 				// if (newState == CompareNodeState.equal)
 			}, []);
-			if (states.indexOf(CompareNodeState.loading)!=-1)
-				this.nodeState = CompareNodeState.loading;
+			if (states.indexOf(CompareNodeState.unknown)!=-1)
+				this.nodeState = CompareNodeState.unknown;
 			else if (states.indexOf(CompareNodeState.error)!=-1)
 				this.nodeState = CompareNodeState.error;
 			else if (states.indexOf(CompareNodeState.conflict) != -1 || states.indexOf(CompareNodeState.unequal) != -1)

@@ -7,12 +7,14 @@ export interface ITreeNode {
     
     name: string;
     isFolder: boolean;
+    isFailed:boolean;
     iconName: string;
     updateFolderState();
     getChildNodes(): Promise<ITreeNode[]>;
     contextValue:string;
     hasChildren:boolean;
     isRootNode:boolean;
+
     openDiff?();
     // uploadFile(compareNode:CompareNode);
 

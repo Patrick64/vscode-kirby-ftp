@@ -47,20 +47,20 @@ export class FtpModel {
 		this.client.end();
 	}
 	
-
+/**
+ * 
+ */
 	public get roots(): Thenable<FtpNode[]> {
 		
 		return new Promise((c, e) => {
 			this.client.list(this.rootDir, (err, list) => {
 				if (err) {
-					return e(err);
+					e(err);
+				} else {
+					c(this.sort(
+						list.filter(entry => entry.name != "." && entry.name != "..")
+						.map(entry => new FtpNode(entry, this.host, this.rootDir))));
 				}
-
-				
-
-				return c(this.sort(
-					list.filter(entry => entry.name != "." && entry.name != "..")
-					.map(entry => new FtpNode(entry, this.host, this.rootDir))));
 			});
 		});
 	

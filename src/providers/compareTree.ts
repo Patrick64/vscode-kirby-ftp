@@ -27,7 +27,7 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode> {
 			return Promise.all(this.profileNodes.map(n => n.connect().then(() => n.refreshAll()).then(() => {this.nodeUpdated(null); })));
 		} catch (err) {
 			console.log(err);
-			
+			return err;
 		}
 	}
 

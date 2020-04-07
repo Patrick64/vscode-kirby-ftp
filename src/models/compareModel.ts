@@ -137,6 +137,8 @@ export class CompareModel {
 				this.removeNodelessChildren(node);	
 				this.updateFolderStateRecursive(node);
 				this.nodeUpdated(node);
+			}).catch(err => {
+				node.isFailed = true;
 			});
 		} else {
 			if (isLocal) {
@@ -237,14 +239,21 @@ export class CompareModel {
 		});
 	}
 
+	/**
+	 * 
+	 * @param compareNode 
+	 */
 	public uploadFile(compareNode:CompareNode):Promise<any> {
-		compareNode.nodeState = CompareNodeState.loading; // signal to user that it's uploading 
-		this.nodeUpdated(compareNode); 
+		
+		
+		this.setNodeIsLoading(compareNode,true);
+		vscode.window.setStatusBarMessage("Kirby FTP: Waiting to upload " + compareNode.name + " ..." );
 
 		return this.promiseQueue.addToQueue(() => {
-			vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
+			
+			
 			return this.doStreamUpload(compareNode)
-			.then(() => { this.nodeUpdated(null); })
+			// .then(() => { this.nodeUpdated(null); })
 			.then(() => { vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
 			.catch((err) => { 
 				
@@ -254,6 +263,9 @@ export class CompareModel {
 				console.log(err);
 				// return Promise.reject(err); 
 				
+			}).finally(() => {
+				
+				this.setNodeIsLoading(compareNode,false);
 			})	
 		})
 		
@@ -261,8 +273,11 @@ export class CompareModel {
 
 	// upload file and create directory if neccesary
 	private doStreamUpload(compareNode) {
-		if (!this.canUploadFile(compareNode)) throw "File cant be uploaded";
-		compareNode.nodeState = CompareNodeState.loading;
+		
+		if (!this.canUploadFile(compareNode)) {
+			throw "File cant be uploaded";
+		}
+		// compareNode.nodeState = CompareNodeState.loading;
 		vscode.window.setStatusBarMessage("Kirby FTP: Uploading " + compareNode.name + " ..." );
 		return this.localModel.createReadStream(compareNode.localNode).then(stream => {
 			if (compareNode.remoteNode) {
@@ -284,13 +299,15 @@ export class CompareModel {
 
 	public uploadFolder(compareNode:CompareNode) {
 		
-		compareNode.nodeState = CompareNodeState.loading;
+		
+		this.setNodeIsLoading(compareNode,true);
 		this.nodeUpdated(compareNode); 
 		this.promiseQueue.addToQueue(() => {
 			vscode.window.setStatusBarMessage("Kirby FTP: Uploading folder " + compareNode.name + " ..." );
 			return this.uploadFolderResursive(compareNode)
 			.then(() => { this.nodeUpdated(null); })
-			.then(() => { vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
+			.then(() => { 
+				vscode.window.setStatusBarMessage("Kirby FTP: " + compareNode.name + " uploaded." ); })
 			.catch((err) => { 
 				compareNode.nodeState = CompareNodeState.error; 
 				this.nodeUpdated(compareNode);
@@ -298,6 +315,8 @@ export class CompareModel {
 				console.log(err);
 				return Promise.reject(err); 
 				
+			}).finally(() => {
+				this.setNodeIsLoading(compareNode,false);
 			})
 		})
 		
