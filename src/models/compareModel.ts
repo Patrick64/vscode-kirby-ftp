@@ -344,7 +344,7 @@ export class CompareModel {
 		vscode.window.setStatusBarMessage("Kirby FTP: Uploading folder " + compareNode.name + " ...");
 		return this.refreshFolder(compareNode,true)
 		.then(() => this.refreshFolder(compareNode,false))
-		.then(() => { if (!compareNode.remoteNode) { debugger; return this.createRemoteFolder(compareNode); } }  )
+		.then(() => { if (!compareNode.remoteNode) {  return this.createRemoteFolder(compareNode); } }  )
 		.then(() => compareNode.children.filter(this.canUploadFile).reduce((promise,n) => promise.then( () => this.doStreamUpload(n)) , Promise.resolve() ))
 		.then(() => compareNode.children.filter(this.canUploadFolder).reduce((promise,n) => promise.then( () => this.uploadFolderResursive(n)) , Promise.resolve() ))
 		.then(() => {vscode.window.setStatusBarMessage("Kirby FTP: Folder uploaded " + compareNode.name + " ...") } );
@@ -415,11 +415,12 @@ export class CompareModel {
 
 	public openDiff(node) {
 		this.setNodeIsLoading(node,true);
-		this.promiseQueue.addToQueue(() => {
+		this.promiseQueue.addToQueue(async () => {
 			
 			if (node.localNode && node.remoteNode) {
 				
-				return Promise.all([this.localModel.getUri(node.localNode,this.profileNode.workspaceFolder),this.remoteModel.getUri(node.remoteNode,this.profileNode.workspaceFolder)]) 
+				return Promise.all([this.localModel.getUri(node.localNode,this.profileNode.workspaceFolder),
+					this.remoteModel.getUri(node.remoteNode,this.profileNode.workspaceFolder)]) 
 				.then(([localUri,remoteUri]) => { 
 					try { 
 						this.setNodeIsLoading(node,false);

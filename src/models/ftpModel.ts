@@ -5,7 +5,7 @@ import * as path from 'path';
 import { IEntry } from '../models/ientry';
 const fse = require('fs-extra')
 import { FtpNode } from '../nodes/ftpNode'
-
+import { kirbyFileSystemProvider } from '../providers/kirbyFileSystemProvider';
 
 export class FtpModel {
 	
@@ -247,12 +247,12 @@ export class FtpModel {
 	}
 
 	public getUri(node:FtpNode,workspaceFolder:WorkspaceFolder):Promise<Uri> {
-		var filepath = path.join(workspaceFolder.uri.fsPath, ".vscode/kirby-ftp/tmp", node.name);
-		return this.getBuffer(node).then((content) => 
-			fse.outputFile(filepath,content).then(() => 
-				Uri.file(filepath)
-			)
-		);
+		// var filepath = path.join(workspaceFolder.uri.fsPath, ".vscode/kirby-ftp/tmp", node.name);
+		return this.getBuffer(node).then(async (content) => {
+			const uri = Uri.parse("kirby:/" + node.name);
+			await kirbyFileSystemProvider.writeFile(uri,content,{create:true,overwrite:true});
+			return uri;
+		});
 	}
 }
 

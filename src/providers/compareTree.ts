@@ -9,6 +9,7 @@ import { CompareNode } from '../nodes/compareNode';
 import { ITreeNode } from '../nodes/iTreeNode';
 import { ProfileNode } from '../nodes/profileNode';
 import { ISettings } from '../modules/config';
+import { KirbyFileSystemProvider } from './kirbyFileSystemProvider';
 
 export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode> {
 
@@ -19,6 +20,9 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode> {
 	private profileNodes: ProfileNode[] = [];
 	private roots=[];
 	private nodes={};
+	constructor() {
+
+	}
 
 	public loadSettingsProfiles(profiles:ISettings[]) {
 		try {

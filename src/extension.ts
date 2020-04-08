@@ -4,6 +4,7 @@
 import * as vscode from 'vscode';
 //import { CompareTreeDataProvider } from './providers/compareTree';
 import { FtpTreeDataProvider } from './providers/compareTree';
+import { kirbyFileSystemProvider } from './providers/kirbyFileSystemProvider';
 import { editConfig, getAllProfiles } from './modules/config';
 import { ProfileNode } from './nodes/profileNode';
 import { ITreeNode } from './nodes/iTreeNode';
@@ -14,8 +15,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
-    console.log('Congratulations, your extension "kirby-ftp" is now active!');
+    // console.log('Congratulations, your extension "kirby-ftp" is now active!');
 
+    // Kirby file system is used to open files from FTP as if they were normal files
+    context.subscriptions.push(vscode.workspace.registerFileSystemProvider('kirby', kirbyFileSystemProvider, { isCaseSensitive: true, isReadonly:false }));
+    
     const compareViewProvider = new FtpTreeDataProvider();
     vscode.window.registerTreeDataProvider('compareView', compareViewProvider);
     vscode.commands.registerCommand('compareView.refreshEntry', () => compareViewProvider.refresh());
@@ -36,6 +40,8 @@ export function activate(context: vscode.ExtensionContext) {
 
         
     });
+    // vscode.window.regist FileSystemProvider
+    // vscode.workspace.registerFileSystemProvider('kirby-ftp',vscode.)
    
     vscode.commands.registerCommand('kirby.openFile', (node: ITreeNode) => {
         node.openDiff();
