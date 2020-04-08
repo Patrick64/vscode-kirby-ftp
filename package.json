@@ -137,6 +137,7 @@
     "test-ftp": "node ./node_modules/ftp-srv/bin/index.js ftp://127.0.0.1:2121 --pasv_url 127.0.0.1 --root ../test-ftp"
   },
   "devDependencies": {
+    "@types/ftp": "^0.3.31",
     "@types/mocha": "^2.2.42",
     "@types/node": "^13.11.0",
     "@types/vscode": "^1.43.0",

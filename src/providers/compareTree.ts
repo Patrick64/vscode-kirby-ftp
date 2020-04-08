@@ -8,8 +8,9 @@ import { CompareModel } from '../models/compareModel';
 import { CompareNode } from '../nodes/compareNode';
 import { ITreeNode } from '../nodes/iTreeNode';
 import { ProfileNode } from '../nodes/profileNode';
-import { ISettings } from '../modules/config';
+import { ISettings, getAllProfiles } from '../modules/config';
 import { KirbyFileSystemProvider } from './kirbyFileSystemProvider';
+import * as vscode from 'vscode';
 
 export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode> {
 
@@ -90,9 +91,22 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode> {
 		// return this.model.getContent(uri);
 	// }
 
-	public refresh() {
-		// if (this.model) {
-		// 	this.model.refreshAll();
-		// }
+	public async loadAllProfiles() {
+		const profiles = await getAllProfiles();
+		await this.loadSettingsProfiles(profiles);
+	}
+
+	/**
+	 * Function called when user clicks the refresh button 
+	 * Called from @see activate
+	 */
+	public async refresh() {
+		try {
+			await Promise.all(this.profileNodes.map(n => n.disconnect()));
+			await this.loadAllProfiles();
+		} catch (err) {
+			vscode.window.showErrorMessage(err);
+		}
+	
 	}
 }

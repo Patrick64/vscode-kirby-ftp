@@ -51,6 +51,9 @@ export class ProfileNode extends CompareNode {
     public connect():Promise<void> {
         return this.compareModel.connect();
     }
+    public async disconnect():Promise<void> {
+        return await this.compareModel.disconnect();
+    }
     public get name() {
         return this.nodeName;
     }

@@ -6,9 +6,22 @@ export class PromiseState {
     public isCancelled:boolean = false;
 }
 
+/**
+ * A hook that is called when a particular action occurs
+ */
+class Hook {
+    
+    constructor(public actionName:string, 
+        public func:Function, 
+        public priority:Number = 10) {
+        
+    }
+}
+
 export class PromiseQueue {
     // array of functions to be called
     private queue:Array<()=>Promise<void>> = [];
+    private hooks:Array<Hook> = [];
     private currentPromise = null;
     // constructor passes in an onError function
     constructor(private onError:(err:any)=>void) {
@@ -28,6 +41,28 @@ export class PromiseQueue {
             } 
         })
         
+    }
+
+    public addHook(hook:Hook):void {
+        this.hooks[hook.actionName] = this.hooks[hook.actionName] || [];
+        this.hooks[hook.actionName].push(hook);
+    }
+
+    /**
+     * 
+     */
+    public async emptyQueue():Promise<Boolean> {
+        // is something current running?
+        if (this.currentPromise) {
+            this.queue = []; // remove all items from queue
+            const lastPromiseHasFinished = async () => 1; // add promise to queue so we know when the operation has finished
+            this.addToQueue(lastPromiseHasFinished);
+            await lastPromiseHasFinished;
+            // last operation has finished.
+            return true;
+        } else {
+            return true;
+        }
     }
 
     // run next function  in the queue

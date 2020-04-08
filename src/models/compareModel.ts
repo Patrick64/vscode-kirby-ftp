@@ -50,9 +50,12 @@ export class CompareModel {
 		this.hasUserRequestedAPause=true;
 	}
 
-	public disconnect() {
-		// this.localModel.disconnect();
-		// this.remoteModel.disconnect();
+	public async disconnect() {
+		await this.promiseQueue.emptyQueue();
+		await this.localModel.disconnect();
+		await this.remoteModel.disconnect();
+		this.profileNode.children = [];
+		this.nodeUpdated(this.profileNode);
 		console.log("TODO: Disconnect");
 	}
 
