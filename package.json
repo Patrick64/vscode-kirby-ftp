@@ -49,8 +49,17 @@
         "category": "Kirby FTP"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "kirby-ftp",
+          "title": "Kirby FTP",
+          "icon": "resources/switch.svg"
+        }
+      ]
+    },
     "views": {
-      "explorer": [
+      "kirby-ftp": [
         {
           "id": "compareView",
           "name": "Kirby FTP"
