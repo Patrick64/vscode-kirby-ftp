@@ -10,6 +10,7 @@ import { ProfileNode } from './nodes/profileNode';
 import { ITreeNode } from './nodes/iTreeNode';
 import { MainController } from './controllers/mainController';
 import { CompareNodeState } from './lib/compareNodeState';
+import { Database } from './modules/database';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -19,10 +20,12 @@ export function activate(context: vscode.ExtensionContext) {
     // This line of code will only be executed once when your extension is activated
     // console.log('Congratulations, your extension "kirby-ftp" is now active!');
 
+    const db = new Database(context.storagePath);
+    db.init();
+    db.someAsyncFunctionAnywhereInYourCode();
     
     // Kirby file system is used to open files from FTP as if they were normal files
     context.subscriptions.push(vscode.workspace.registerFileSystemProvider('kirby', kirbyFileSystemProvider, { isCaseSensitive: true, isReadonly:false }));
-    const d = context.storagePath;   
     const compareViewProvider = new FtpTreeDataProvider();
     const filterViewProvider = new FtpTreeDataProvider();
     const mainController = new MainController(compareViewProvider, filterViewProvider);
