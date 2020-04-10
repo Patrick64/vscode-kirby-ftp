@@ -21,8 +21,8 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.workspace.registerFileSystemProvider('kirby', kirbyFileSystemProvider, { isCaseSensitive: true, isReadonly:false }));
     
     const compareViewProvider = new FtpTreeDataProvider();
-    vscode.window.registerTreeDataProvider('compareView', compareViewProvider);
-    vscode.commands.registerCommand('compareView.refreshEntry', () => compareViewProvider.refresh());
+    vscode.window.registerTreeDataProvider('kirbyCompareView', compareViewProvider);
+    vscode.commands.registerCommand('kirbyCompareView.refreshEntry', () => compareViewProvider.refresh());
     vscode.commands.registerCommand("kirby.openConfig", () => {
         editConfig();
 

@@ -61,8 +61,12 @@
     "views": {
       "kirby-ftp": [
         {
-          "id": "compareView",
-          "name": "Kirby FTP"
+          "id": "kirbyCompareView",
+          "name": "Compare"
+        },
+        {
+          "id": "kirbyFilterView",
+          "name": "Filter"
         }
       ]
     },
