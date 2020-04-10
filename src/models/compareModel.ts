@@ -5,8 +5,9 @@ import { ITreeNode } from '../nodes/iTreeNode';
 import * as vscode from 'vscode';
 import { ProfileNode, ConnectionStatus } from '../nodes/profileNode';
 require('promise-pause');
-import { CompareNode, CompareNodeState } from '../nodes/compareNode';
+import { CompareNode } from '../nodes/compareNode';
 import { PromiseQueue } from '../modules/promiseQueue';
+import { CompareNodeState } from '../lib/compareNodeState';
 
 export class CompareModel {
 	
@@ -226,6 +227,16 @@ export class CompareModel {
 	public getChildren(node: CompareNode): Thenable<CompareNode[]> {
 		return Promise.resolve(node.getChildNodes());
 		
+	}
+
+	public filterByStates(filterByStates:CompareNodeState[],nodes:CompareNode[]):CompareNode[] {
+		if (!filterByStates || filterByStates.length == 0) {
+			return nodes;
+		} else {
+			return nodes.filter(node => 
+				node.isFolder || filterByStates.includes(node.nodeState)
+			)
+		}
 	}
 
 	public sort(nodes: CompareNode[]): CompareNode[] {

@@ -11,6 +11,7 @@ import { ProfileNode } from '../nodes/profileNode';
 import { ISettings, getAllProfiles } from '../modules/config';
 import { KirbyFileSystemProvider } from './kirbyFileSystemProvider';
 import * as vscode from 'vscode';
+import { CompareNodeState } from '../lib/compareNodeState';
 
 export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode> {
 
@@ -21,19 +22,10 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode> {
 	private profileNodes: ProfileNode[] = [];
 	private roots=[];
 	private nodes={};
-	constructor() {
+	public filterByStates:CompareNodeState[] = [];
 
-	}
-
-	public loadSettingsProfiles(profiles:ISettings[]) {
-		try {
-			this.profileNodes = profiles.map(p => new ProfileNode(p,this.nodeUpdated.bind(this)) );
-			this.nodeUpdated(null); 
-			return Promise.all(this.profileNodes.map(n => n.connect().then(() => n.refreshAll()).then(() => {this.nodeUpdated(null); })));
-		} catch (err) {
-			console.log(err);
-			return err;
-		}
+	public setProfileNodes(profileNodes: ProfileNode[]) {
+		this.profileNodes = profileNodes;
 	}
 
 	public getTreeItem(element: ITreeNode): TreeItem {
@@ -60,6 +52,7 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode> {
 	public getChildren(element?: ITreeNode): ITreeNode[] | Thenable<ITreeNode[]> {
 		this.profileNodes.forEach((p) => { p.userRequestsPause(); });
 		if (!element) {
+			// this is a root node so return the list of profilenodes
 			return Promise.resolve(this.profileNodes);
 				
 				// this.model = new CompareModel(new FtpModel('127.0.0.1', 'test', '123',4567), new FtpModel('127.0.0.1', 'test', '123',4567) );
@@ -75,7 +68,7 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode> {
 				// return this.model.roots.then((t) => { this.roots = t; return t; } );
 			// }
 		} else {
-			return element.getChildNodes();
+			return element.getChildNodes(this.filterByStates);
 			// return this.model.getChildren(element);
 		}
 	}
@@ -91,22 +84,7 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode> {
 		// return this.model.getContent(uri);
 	// }
 
-	public async loadAllProfiles() {
-		const profiles = await getAllProfiles();
-		await this.loadSettingsProfiles(profiles);
-	}
-
-	/**
-	 * Function called when user clicks the refresh button 
-	 * Called from @see activate
-	 */
-	public async refresh() {
-		try {
-			await Promise.all(this.profileNodes.map(n => n.disconnect()));
-			await this.loadAllProfiles();
-		} catch (err) {
-			vscode.window.showErrorMessage(err);
-		}
 	
-	}
+
+	
 }

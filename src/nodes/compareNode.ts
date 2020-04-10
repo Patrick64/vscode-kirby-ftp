@@ -5,34 +5,9 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import * as FileCompare from '../lib/fileCompare';
-
-export enum CompareNodeState {
-	unknown = 0,
-	equal = 200,
-	localOnly = 300,
-	remoteOnly = 400,
-	remoteChanged = 500,
-	localChanged = 600,
-	unequal = 700,
-	bothChanged = 800,
-	conflict = 900,
-	error = 1000,
-}
+import { CompareNodeState, getCompareNodeStateString } from '../lib/compareNodeState';
 
 
-function getCompareNodeStateString(state:CompareNodeState):string {
-	if (state == CompareNodeState.equal) return 'equal';
-	if (state == CompareNodeState.localOnly) return 'localOnly';
-	if (state == CompareNodeState.remoteOnly) return 'remoteOnly';
-	if (state == CompareNodeState.remoteChanged) return 'remoteChanged';
-	if (state == CompareNodeState.localChanged) return 'localChanged';
-	if (state == CompareNodeState.unequal) return 'unequal';
-	if (state == CompareNodeState.bothChanged) return 'bothChanged';
-	if (state == CompareNodeState.conflict) return 'conflict';
-	if (state == CompareNodeState.error) return 'error';
-	if (state == CompareNodeState.unknown) return 'loading';
-	return '';
-}
 
 
 export class CompareNode implements ITreeNode {
@@ -215,8 +190,8 @@ export class CompareNode implements ITreeNode {
 		this.children.push(child);
 	}
 
-	public getChildNodes() {
-		return Promise.resolve(this.compareModel.sort(this.children));
+	public async getChildNodes(filterByStates?:CompareNodeState[]) {
+		return this.compareModel.sort(this.compareModel.filterByStates(filterByStates,this.children));
 	}
 
 	public updateFolderState() {

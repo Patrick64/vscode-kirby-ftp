@@ -40,7 +40,7 @@
         "category": "Kirby FTP"
       },
       {
-        "command": "compareView.refreshEntry",
+        "command": "kirbyCompareView.refreshEntry",
         "title": "Refresh All",
         "icon": {
           "light": "resources/light/refresh.svg",
@@ -73,70 +73,70 @@
     "menus": {
       "view/title": [
         {
-          "command": "compareView.refreshEntry",
+          "command": "kirbyCompareView.refreshEntry",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == file_equal"
+          "when": "view == kirbyCompareView && viewItem == file_equal"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == file_localOnly"
+          "when": "view == kirbyCompareView && viewItem == file_localOnly"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == file_remoteChanged"
+          "when": "view == kirbyCompareView && viewItem == file_remoteChanged"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == file_localChanged"
+          "when": "view == kirbyCompareView && viewItem == file_localChanged"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == file_unequal"
+          "when": "view == kirbyCompareView && viewItem == file_unequal"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == file_bothChanged"
+          "when": "view == kirbyCompareView && viewItem == file_bothChanged"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == file_conflict"
+          "when": "view == kirbyCompareView && viewItem == file_conflict"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == folder_equal"
+          "when": "view == kirbyCompareView && viewItem == folder_equal"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == folder_localOnly"
+          "when": "view == kirbyCompareView && viewItem == folder_localOnly"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == folder_remoteChanged"
+          "when": "view == kirbyCompareView && viewItem == folder_remoteChanged"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == folder_localChanged"
+          "when": "view == kirbyCompareView && viewItem == folder_localChanged"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == folder_unequal"
+          "when": "view == kirbyCompareView && viewItem == folder_unequal"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == folder_bothChanged"
+          "when": "view == kirbyCompareView && viewItem == folder_bothChanged"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == folder_conflict"
+          "when": "view == kirbyCompareView && viewItem == folder_conflict"
         },
         {
           "command": "kirby.uploadFile",
-          "when": "view == compareView && viewItem == profile_node"
+          "when": "view == kirbyCompareView && viewItem == profile_node"
         }
       ]
     }
@@ -162,6 +162,8 @@
   "dependencies": {
     "fs-extra": "^5.0.0",
     "ftp": "^0.3.10",
+    "lokijs": "^1.5.8",
+    "lokijs-promise": "^1.0.4",
     "path-is-inside": "^1.0.2",
     "promise-pause": "^1.0.2"
   }

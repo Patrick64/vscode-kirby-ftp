@@ -1,3 +1,4 @@
+import { CompareNodeState } from "../lib/compareNodeState";
 
 
 export interface ITreeNode {
@@ -10,7 +11,7 @@ export interface ITreeNode {
     isFailed:boolean;
     iconName: string;
     updateFolderState();
-    getChildNodes(): Promise<ITreeNode[]>;
+    getChildNodes(filterByStates?:CompareNodeState[] ): Promise<ITreeNode[]>;
     contextValue:string;
     hasChildren:boolean;
     isRootNode:boolean;

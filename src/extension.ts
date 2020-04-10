@@ -8,6 +8,8 @@ import { kirbyFileSystemProvider } from './providers/kirbyFileSystemProvider';
 import { editConfig, getAllProfiles } from './modules/config';
 import { ProfileNode } from './nodes/profileNode';
 import { ITreeNode } from './nodes/iTreeNode';
+import { MainController } from './controllers/mainController';
+import { CompareNodeState } from './lib/compareNodeState';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -17,12 +19,25 @@ export function activate(context: vscode.ExtensionContext) {
     // This line of code will only be executed once when your extension is activated
     // console.log('Congratulations, your extension "kirby-ftp" is now active!');
 
+    
     // Kirby file system is used to open files from FTP as if they were normal files
     context.subscriptions.push(vscode.workspace.registerFileSystemProvider('kirby', kirbyFileSystemProvider, { isCaseSensitive: true, isReadonly:false }));
-    
+    const d = context.storagePath;   
     const compareViewProvider = new FtpTreeDataProvider();
+    const filterViewProvider = new FtpTreeDataProvider();
+    const mainController = new MainController(compareViewProvider, filterViewProvider);
+    filterViewProvider.filterByStates = [
+        CompareNodeState.bothChanged,
+        CompareNodeState.conflict,
+        CompareNodeState.localChanged,
+        CompareNodeState.localOnly,
+        CompareNodeState.remoteChanged,
+        CompareNodeState.remoteOnly,
+        CompareNodeState.unequal
+    ];
     vscode.window.registerTreeDataProvider('kirbyCompareView', compareViewProvider);
-    vscode.commands.registerCommand('kirbyCompareView.refreshEntry', () => compareViewProvider.refresh());
+    vscode.window.registerTreeDataProvider('kirbyFilterView', filterViewProvider);
+    vscode.commands.registerCommand('kirbyCompareView.refreshEntry', () => mainController.refresh());
     vscode.commands.registerCommand("kirby.openConfig", () => {
         editConfig();
 
@@ -51,14 +66,18 @@ export function activate(context: vscode.ExtensionContext) {
        
         
     });
-   
+    try {
+        mainController.loadAllProfiles();
+    } catch (err) {
+        vscode.window.showErrorMessage(err);
+    }
     
-    getAllProfiles().then((profiles):Promise<void> => {
-        compareViewProvider.loadSettingsProfiles(profiles);
-        return Promise.resolve();
-    }).catch(error => {
-        vscode.window.showErrorMessage(error);
-    });
+    // getAllProfiles().then((profiles):Promise<void> => {
+    //     compareViewProvider.loadSettingsProfiles(profiles);
+    //     return Promise.resolve();
+    // }).catch(error => {
+    //     vscode.window.showErrorMessage(error);
+    // });
 
     // var promise1:Promise<void> = new Promise(function(resolve, reject) {
     //     debugger;
