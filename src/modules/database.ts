@@ -1,4 +1,5 @@
 import path = require("path");
+import { ISyncInfo } from "../interfaces/iSyncInfo";
 
 const { getCollection, initDB, getDB } = require("lokijs-promise");
 const fs = require("fs").promises;
@@ -22,6 +23,38 @@ export class Database {
       initDB(this.dbPath, 1000); // A file called v1.json will be created in your project repo and will be used as the DB, and it will have an autosave interval of 1000ms (1 second, essentially)
     }
   };
+
+  /**
+   * Store sync info in database for future reference to tell if a file has changed on disk or ftp
+   */
+  public storeSyncInfo = async(syncInfo:ISyncInfo) => {
+    let collection = await getCollection("sync_info");
+    let dbSyncInfo = this.getSyncInfoFromCollection(collection,syncInfo);
+    
+    if (dbSyncInfo) {
+      dbSyncInfo.nodes = syncInfo.nodes;
+      collection.update(dbSyncInfo);
+    } else {
+      collection.insert(syncInfo);
+    }
+    
+  }
+
+  private getSyncInfoFromCollection = (collection,{host,port,username,protocol,localPath,remotePath}) => {
+    return collection.findOne({
+      host:{$eq: host},
+      port: { $eq: port},
+      username: { $eq: username},
+      protocol: { $eq: protocol},
+      localPath: { $eq: localPath},
+      remotePath: { $eq: remotePath},
+    })
+  }
+
+  public getSyncInfo = async(profileSettings):Promise<ISyncInfo> => {
+    let collection = await getCollection("sync_info");
+    return this.getSyncInfoFromCollection(collection,profileSettings);
+  }
 
   public someAsyncFunctionAnywhereInYourCode = async () => {
     // Get Insect Collections if exists, if not, it will create one in the DB

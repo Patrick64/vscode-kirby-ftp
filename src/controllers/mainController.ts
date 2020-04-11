@@ -3,13 +3,14 @@ import { ProfileNode } from "../nodes/profileNode";
 import * as vscode from 'vscode';
 import { FtpTreeDataProvider } from "../providers/compareTree";
 import { ITreeNode } from "../nodes/iTreeNode";
+import { Database } from "../modules/database";
 
 export class MainController {
 
     private profileNodes: ProfileNode[] = [];
     private allTrees:FtpTreeDataProvider[] = [];
 
-    constructor(private compareTree:FtpTreeDataProvider, private filterTree:FtpTreeDataProvider)  {
+    constructor(private compareTree:FtpTreeDataProvider, private filterTree:FtpTreeDataProvider, private database:Database)  {
         this.allTrees = [compareTree, filterTree];
     }
 
@@ -51,7 +52,7 @@ export class MainController {
      */
     private async loadSettingsProfiles(profiles:ISettings[]) {
 		try {
-            this.profileNodes = profiles.map(p => new ProfileNode(p,this.updateProfileNode) );
+            this.profileNodes = profiles.map(p => new ProfileNode(p,this.updateProfileNode,this.database) );
             this.addProfileNodesToAllTrees();
 			this.updateProfileNode(null);
 			await Promise.all(this.profileNodes.map(async profileNode =>  {

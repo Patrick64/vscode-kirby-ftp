@@ -32,4 +32,14 @@ export class DiskNode {
 	public get size(): number {
 		return this.entry.size;
 	}
+
+	/**
+	 * Get size and modified date @see CompareNode::getSyncInfo
+	 */
+	public getSyncInfo() {
+		return {
+			size: this.size,
+			modified: this.dateLastModified
+		}
+	}
 }

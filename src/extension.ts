@@ -22,13 +22,13 @@ export function activate(context: vscode.ExtensionContext) {
 
     const db = new Database(context.storagePath);
     db.init();
-    db.someAsyncFunctionAnywhereInYourCode();
+    
     
     // Kirby file system is used to open files from FTP as if they were normal files
     context.subscriptions.push(vscode.workspace.registerFileSystemProvider('kirby', kirbyFileSystemProvider, { isCaseSensitive: true, isReadonly:false }));
     const compareViewProvider = new FtpTreeDataProvider();
     const filterViewProvider = new FtpTreeDataProvider();
-    const mainController = new MainController(compareViewProvider, filterViewProvider);
+    const mainController = new MainController(compareViewProvider, filterViewProvider, db);
     filterViewProvider.filterByStates = [
         CompareNodeState.bothChanged,
         CompareNodeState.conflict,

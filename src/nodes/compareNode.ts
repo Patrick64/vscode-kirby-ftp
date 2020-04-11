@@ -6,6 +6,8 @@ import * as vscode from 'vscode';
 
 import * as FileCompare from '../lib/fileCompare';
 import { CompareNodeState, getCompareNodeStateString } from '../lib/compareNodeState';
+import { timingSafeEqual } from 'crypto';
+import { ISyncInfoNode } from '../interfaces/iSyncInfo';
 
 
 
@@ -233,4 +235,36 @@ export class CompareNode implements ITreeNode {
 		if (this._parent) this.parentNode.updateFolderState();
 	}
 
+	/**
+	 * Get info about file for storage in database
+	 * This is so we know the date modified and size of all files (on ftp and on disk) so we
+	 * can then know if a file has been modified on remote or locally and then can safely sync the 
+	 * file without losing anything
+	 */
+	public getSyncInfoNode():ISyncInfoNode {
+		if (this.isFolder) {
+			return {
+				nodeState: this.nodeState,
+				isFolder:true,
+				// get object of all child items
+				children: this.children.reduce((list,node) => {
+					list[node.name] = node.getSyncInfoNode();
+					return list;
+				},{})
+			}
+
+		} else {
+			
+			return {
+				nodeState: this.nodeState,
+				isFolder:false,
+				local: this.localNode ? this.localNode.getSyncInfo() : null,
+				remote: this.remoteNode ? this.remoteNode.getSyncInfo() : null
+			};
+			
+		}
+		
+	}
+
 }
+

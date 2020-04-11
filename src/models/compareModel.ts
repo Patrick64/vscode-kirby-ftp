@@ -8,6 +8,7 @@ require('promise-pause');
 import { CompareNode } from '../nodes/compareNode';
 import { PromiseQueue } from '../modules/promiseQueue';
 import { CompareNodeState } from '../lib/compareNodeState';
+import { Database } from '../modules/database';
 
 export class CompareModel {
 	
@@ -17,7 +18,7 @@ export class CompareModel {
 	
 
 	
-	constructor(private localModel, private remoteModel, private nodeUpdated:Function, private profileNode: ProfileNode) {
+	constructor(private localModel, private remoteModel, private nodeUpdated:Function, private profileNode: ProfileNode,private database: Database) {
 		
 		this.promiseQueue = new PromiseQueue(this.onError);
 		//this.refreshAll();
@@ -212,6 +213,12 @@ export class CompareModel {
 		.then(() => this.nodeUpdated(null))
 		.pause(500)
 		.then(() => this.doComparisonsRecursivly(node))
+		.then(async () => {
+			const syncInfo = this.profileNode.getSyncInfo();
+			await this.database.storeSyncInfo(syncInfo);
+			const stored = await this.database.getSyncInfo(syncInfo);
+			debugger;
+		})
 		.catch(err => {
 					console.error(err)
 					
@@ -469,5 +476,6 @@ export class CompareModel {
 		});
 	}
 
+	
 }
 

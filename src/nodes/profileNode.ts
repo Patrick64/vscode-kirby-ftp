@@ -7,6 +7,8 @@ import { DiskModel } from '../models/diskModel';
 import { FtpModel } from '../models/ftpModel';
 import { CompareNode } from '../nodes/compareNode';
 import { ISettings } from '../modules/config';
+import { ISyncInfo } from '../interfaces/iSyncInfo';
+import { Database } from '../modules/database';
 
 
 export enum ConnectionStatus {
@@ -20,7 +22,7 @@ export class ProfileNode extends CompareNode {
     public isFailed:boolean = false; 
     private nodeName:string;
     public connectionStatus:ConnectionStatus = ConnectionStatus.Connecting;
-    constructor(private profileSettings:ISettings,private nodeUpdated:Function) {
+    constructor(private profileSettings:ISettings,private nodeUpdated:Function, database: Database) {
         // just call super function will nulls for now, we'll add the reuiqred values below
         super(null,null,"",path.sep,true,null, null);
         
@@ -36,7 +38,8 @@ export class ProfileNode extends CompareNode {
             localModel,
             remoteModel,
             nodeUpdated,
-            this );	
+            this,
+            database );	
         // setup values for this being CompareNode
         this.localNode = localModel.getRootNode();
         this.remoteNode = remoteModel.getRootNode(); 
@@ -108,6 +111,17 @@ export class ProfileNode extends CompareNode {
         this.compareModel.userRequestsPause();
     }
 
-    
+    public getSyncInfo():ISyncInfo   {
+        return {
+            host:this.profileSettings.settings.host,
+            port:this.profileSettings.settings.port,
+            username:this.profileSettings.settings.username,
+            protocol:this.profileSettings.settings.protocol,
+            localPath:this.profileSettings.settings.localPath,
+            remotePath:this.profileSettings.settings.remotePath,
+            nodes: this.getSyncInfoNode()
+        }
+
+    }
 
 }
