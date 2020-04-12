@@ -22,7 +22,7 @@ export class ProfileNode extends CompareNode {
     public isFailed:boolean = false; 
     private nodeName:string;
     public connectionStatus:ConnectionStatus = ConnectionStatus.Connecting;
-    constructor(private profileSettings:ISettings,private nodeUpdated:Function, database: Database) {
+    constructor(private profileSettings:ISettings,private nodeUpdated:Function, private database: Database) {
         // just call super function will nulls for now, we'll add the reuiqred values below
         super(null,null,"",path.sep,true,null, null);
         
@@ -39,7 +39,7 @@ export class ProfileNode extends CompareNode {
             remoteModel,
             nodeUpdated,
             this,
-            database );	
+            this.database );	
         // setup values for this being CompareNode
         this.localNode = localModel.getRootNode();
         this.remoteNode = remoteModel.getRootNode(); 
@@ -122,6 +122,11 @@ export class ProfileNode extends CompareNode {
             nodes: this.getSyncInfoNode()
         }
 
+    }
+
+    /** Get previous sync info, used to know what state (ie equal, changed etc) the files were in */
+    public getSyncInfoFromDatabase = async():Promise<ISyncInfo> => {
+        return await this.database.getSyncInfo(this.profileSettings.settings);
     }
 
 }

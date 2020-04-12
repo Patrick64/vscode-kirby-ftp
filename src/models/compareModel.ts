@@ -9,6 +9,7 @@ import { CompareNode } from '../nodes/compareNode';
 import { PromiseQueue } from '../modules/promiseQueue';
 import { CompareNodeState } from '../lib/compareNodeState';
 import { Database } from '../modules/database';
+import { ISyncInfo, ISyncInfoNode } from '../interfaces/iSyncInfo';
 
 export class CompareModel {
 	
@@ -176,12 +177,15 @@ export class CompareModel {
 		
 	}
 
-	private doComparisonsRecursivly(node) {
+	private doComparisonsRecursivly(node:CompareNode,priorSyncInfoNode:ISyncInfoNode) {
 
 		var compareAllFiles = () => node.children
 			.filter( c => !c.isFolder )
 			.reduce( (promise,file) => 
-				promise.then(() => file.doComparison(this.localModel,this.remoteModel))
+				promise.then(() => {
+					const n = priorSyncInfoNode?.children?.[file.name]
+					return file.doComparison(this.localModel,this.remoteModel,n)
+				})
 				.then(() => this.nodeUpdated(file))
 			, Promise.resolve());
 			
@@ -191,7 +195,8 @@ export class CompareModel {
 			.filter( c => c.isFolder )
 			.reduce( (promise,folder) => 
 				promise.then(() => {
-					return this.doComparisonsRecursivly(folder)
+					const n = priorSyncInfoNode?.children?.[folder.name]
+					return this.doComparisonsRecursivly(folder,n)
 				})
 				.then(() => this.nodeUpdated(folder))
 			,Promise.resolve());
@@ -203,7 +208,8 @@ export class CompareModel {
 		
 	}
 
-	private doFullRefresh(node:CompareNode) {
+	private async doFullRefresh(node:CompareNode) {
+		const priorSyncInfo:ISyncInfo = await this.profileNode.getSyncInfoFromDatabase();
 		return this.refreshFolderRecursivly(node,true)
 		.then(() => this.nodeUpdated(null))
 		.pause(500)
@@ -212,12 +218,12 @@ export class CompareModel {
 		})
 		.then(() => this.nodeUpdated(null))
 		.pause(500)
-		.then(() => this.doComparisonsRecursivly(node))
+		.then(() => this.doComparisonsRecursivly(node,priorSyncInfo ? priorSyncInfo.nodes : null))
 		.then(async () => {
 			const syncInfo = this.profileNode.getSyncInfo();
 			await this.database.storeSyncInfo(syncInfo);
-			const stored = await this.database.getSyncInfo(syncInfo);
-			debugger;
+			//const stored = await this.database.getSyncInfo(syncInfo);
+			
 		})
 		.catch(err => {
 					console.error(err)

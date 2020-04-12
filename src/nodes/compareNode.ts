@@ -108,41 +108,94 @@ export class CompareNode implements ITreeNode {
 	}
 
 
-	public doComparison(localModel, remoteModel):Thenable<void> {
+	public async doComparison(localModel, remoteModel, priorSyncInfoNode:ISyncInfoNode):Promise<void> {
+		try {
 		if (this.isFolder) {
 			this.nodeState = CompareNodeState.unknown; // leave until updateFolderState is called.
         } else if (!this.localNode && !this.remoteNode) {
             this.nodeState = CompareNodeState.error;
         } else	if (!this.localNode) {
-            this.nodeState = CompareNodeState.remoteOnly;
+			this.nodeState = CompareNodeState.remoteOnly;
         } else if (!this.remoteNode) {
             this.nodeState = CompareNodeState.localOnly;
         } else if (this.isFolder) {
-            this.nodeState = CompareNodeState.unknown; // leave until updateFolderState is called.
+			this.nodeState = CompareNodeState.unknown; // leave until updateFolderState is called.
+		} else if (this.isSyncInfoEqual(priorSyncInfoNode)) {
+			// both local and remote files haven't changed since we last looked 
+			// so use the state we recorded then to save time
+			this.nodeState = priorSyncInfoNode.nodeState;
+		} else if (this.isSyncInfoShowLocalHasChanged(priorSyncInfoNode)) {
+			const isEqual = await this.doFullFileComparison(localModel, remoteModel);
+			if (isEqual) {
+				this.nodeState = CompareNodeState.equal;
+			} else if (priorSyncInfoNode.nodeState == CompareNodeState.equal || priorSyncInfoNode.nodeState == CompareNodeState.localChanged) {
+				this.nodeState = CompareNodeState.localChanged;
+			} else {
+				this.nodeState = CompareNodeState.unequal;
+			}
+		} else if (this.isSyncInfoShowRemoteHasChanged(priorSyncInfoNode)) {
+			const isEqual = await this.doFullFileComparison(localModel, remoteModel);
+			if (isEqual) {
+				this.nodeState = CompareNodeState.equal;
+			} else if (priorSyncInfoNode.nodeState == CompareNodeState.equal || priorSyncInfoNode.nodeState == CompareNodeState.remoteChanged) {
+				this.nodeState = CompareNodeState.remoteChanged;
+			} else {
+				this.nodeState = CompareNodeState.unequal;
+			}
         } else if (this.localNode.size != this.remoteNode.size)  {
             this.nodeState = CompareNodeState.unequal;
         } else {
             // setInterval( ()=>{  
 			vscode.window.setStatusBarMessage("Kirby FTP: Comparing " + this.name);
+			const isEqual = await this.doFullFileComparison(localModel, remoteModel);
 			
-			return Promise.all([localModel.getBuffer(this.localNode),remoteModel.getBuffer(this.remoteNode)])
+				// localModel.closeStream();
+				// remoteModel.closeStream();
+			this.nodeState = isEqual ? CompareNodeState.equal : CompareNodeState.unequal;
+			
+            // }, 1000 );
+		}
+	} catch(err) {
+		this.nodeState = CompareNodeState.error;
+		throw (err);
+	}
+        
+    
+		
+	}
+
+	private isSyncInfoEqual(priorSyncInfoNode:ISyncInfoNode) {
+		return (!priorSyncInfoNode.isFolder 
+		&& priorSyncInfoNode.local 
+		&& priorSyncInfoNode.remote 
+		&& this.localNode.isSyncInfoEqual(priorSyncInfoNode.local)
+		&& this.remoteNode.isSyncInfoEqual(priorSyncInfoNode.remote));
+	}
+	
+
+	private isSyncInfoShowRemoteHasChanged(priorSyncInfoNode:ISyncInfoNode) {
+		return (!priorSyncInfoNode.isFolder 
+		&& priorSyncInfoNode.local 
+		&& priorSyncInfoNode.remote 
+		&& this.localNode.isSyncInfoEqual(priorSyncInfoNode.local)
+		&& !this.remoteNode.isSyncInfoEqual(priorSyncInfoNode.remote));
+	}
+
+	private isSyncInfoShowLocalHasChanged(priorSyncInfoNode:ISyncInfoNode) {
+		return (!priorSyncInfoNode.isFolder 
+		&& priorSyncInfoNode.local 
+		&& priorSyncInfoNode.remote 
+		&& !this.localNode.isSyncInfoEqual(priorSyncInfoNode.local)
+		&& this.remoteNode.isSyncInfoEqual(priorSyncInfoNode.remote));
+	}
+
+
+	private doFullFileComparison(localModel, remoteModel):Promise<boolean> {
+		return Promise.all([localModel.getBuffer(this.localNode),remoteModel.getBuffer(this.remoteNode)])
 			.then(([localBuffer, remoteBuffer]) => {
 				return FileCompare.compareBuffers(localBuffer,remoteBuffer);
 				// return streamEqual(localStream, remoteStream).then((isEqual) => { localStream.destroy(); remoteStream.destroy(); return isEqual;});
-			}).then((isEqual) => {
-				// localModel.closeStream();
-				// remoteModel.closeStream();
-				this.nodeState = isEqual ? CompareNodeState.equal : CompareNodeState.unequal;
-			}).catch((err) => {
-				this.nodeState = CompareNodeState.error;
-				return Promise.reject(err);
-			})	;									
-			
-            // }, 1000 );
-        }
-        return Promise.resolve();
-    
-		
+			})
 	}
 
 	public openDiff() {
@@ -183,7 +236,7 @@ export class CompareNode implements ITreeNode {
 			case CompareNodeState.remoteOnly: return 'file-remote'; 
 			case CompareNodeState.unequal: return 'unequal'; 
 			case CompareNodeState.remoteChanged: return 'remoteChanged'; 
-			case CompareNodeState.localChanged: return 'localChange'; 
+			case CompareNodeState.localChanged: return 'localChanged'; 
 		}
 
 	}

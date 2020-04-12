@@ -30,7 +30,7 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode> {
 
 	public getTreeItem(element: ITreeNode): TreeItem {
 		var collapsibleState = void 0;
-		if (element.isFolder && element.hasChildren) {
+		if (element.isFolder) {
 			collapsibleState = element.isRootNode ? TreeItemCollapsibleState.Expanded : TreeItemCollapsibleState.Collapsed;
 		}
 		return {

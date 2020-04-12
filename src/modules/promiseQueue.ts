@@ -29,7 +29,7 @@ export class PromiseQueue {
     }
     
     // add a a function to the queue to be called. This will also reeturn a promie that is resolved when the function has finished.
-    public addToQueue(func:()=>Promise<{}>) {
+    public addToQueue(func:()=>Promise<void>) {
         return new Promise((resolve,reject) => {
             // add function to queue, also when the function is done then resolve this addToQueue
             var queueItem = () => func().then(resolve).catch(reject);
@@ -55,7 +55,7 @@ export class PromiseQueue {
         // is something current running?
         if (this.currentPromise) {
             this.queue = []; // remove all items from queue
-            const lastPromiseHasFinished = async () => 1; // add promise to queue so we know when the operation has finished
+            const lastPromiseHasFinished = async () => {}; // add promise to queue so we know when the operation has finished
             this.addToQueue(lastPromiseHasFinished);
             await lastPromiseHasFinished;
             // last operation has finished.

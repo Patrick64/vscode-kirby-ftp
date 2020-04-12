@@ -43,4 +43,10 @@ export class FtpNode {
 			modified: this.dateLastModified
 		}
 	}
+
+	public isSyncInfoEqual(syncInfo) {
+		return (syncInfo.size == this.size && 
+			new Date(syncInfo.modified).toString() == new Date(this.dateLastModified).toString());
+			
+	}
 }

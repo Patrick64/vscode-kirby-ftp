@@ -41,7 +41,7 @@ export class Database {
   }
 
   private getSyncInfoFromCollection = (collection,{host,port,username,protocol,localPath,remotePath}) => {
-    return collection.findOne({
+    const result = collection.findOne({
       host:{$eq: host},
       port: { $eq: port},
       username: { $eq: username},
@@ -49,11 +49,12 @@ export class Database {
       localPath: { $eq: localPath},
       remotePath: { $eq: remotePath},
     })
+    return result;
   }
 
-  public getSyncInfo = async(profileSettings):Promise<ISyncInfo> => {
+  public getSyncInfo = async(settings):Promise<ISyncInfo> => {
     let collection = await getCollection("sync_info");
-    return this.getSyncInfoFromCollection(collection,profileSettings);
+    return this.getSyncInfoFromCollection(collection,settings);
   }
 
   public someAsyncFunctionAnywhereInYourCode = async () => {
