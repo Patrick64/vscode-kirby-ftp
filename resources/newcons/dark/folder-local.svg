@@ -12,7 +12,7 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.91 r13725"
-   sodipodi:docname="folder-local.svg">
+   sodipodi:docname="file-local.svg">
   <metadata
      id="metadata14">
     <rdf:RDF>
@@ -21,12 +21,65 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
   <defs
-     id="defs12" />
+     id="defs12">
+    <inkscape:path-effect
+       effect="powerstroke"
+       id="path-effect4178"
+       is_visible="true"
+       offset_points="0,0.5"
+       sort_points="true"
+       interpolator_type="CubicBezierJohan"
+       interpolator_beta="0.2"
+       start_linecap_type="zerowidth"
+       linejoin_type="round"
+       miter_limit="4"
+       end_linecap_type="zerowidth"
+       cusp_linecap_type="round" />
+    <inkscape:path-effect
+       effect="powerstroke"
+       id="path-effect4174"
+       is_visible="true"
+       offset_points="0,0.5"
+       sort_points="true"
+       interpolator_type="CubicBezierJohan"
+       interpolator_beta="0.2"
+       start_linecap_type="zerowidth"
+       linejoin_type="round"
+       miter_limit="4"
+       end_linecap_type="zerowidth"
+       cusp_linecap_type="round" />
+    <inkscape:path-effect
+       effect="powerstroke"
+       id="path-effect4164"
+       is_visible="true"
+       offset_points="0,0.5"
+       sort_points="true"
+       interpolator_type="CubicBezierJohan"
+       interpolator_beta="0.2"
+       start_linecap_type="zerowidth"
+       linejoin_type="round"
+       miter_limit="4"
+       end_linecap_type="zerowidth"
+       cusp_linecap_type="round" />
+    <inkscape:path-effect
+       effect="powerstroke"
+       id="path-effect4160"
+       is_visible="true"
+       offset_points="0,0.5"
+       sort_points="true"
+       interpolator_type="CubicBezierJohan"
+       interpolator_beta="0.2"
+       start_linecap_type="zerowidth"
+       linejoin_type="round"
+       miter_limit="4"
+       end_linecap_type="zerowidth"
+       cusp_linecap_type="round" />
+  </defs>
   <sodipodi:namedview
      pagecolor="#ffffff"
      bordercolor="#666666"
@@ -37,34 +90,27 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:window-width="1920"
-     inkscape:window-height="1053"
+     inkscape:window-height="1031"
      id="namedview10"
-     showgrid="false"
-     inkscape:zoom="14.75"
-     inkscape:cx="-8.5084746"
-     inkscape:cy="8"
-     inkscape:window-x="0"
+     showgrid="true"
+     inkscape:zoom="20.86"
+     inkscape:cx="-2.5552161"
+     inkscape:cy="2.076255"
+     inkscape:window-x="1920"
      inkscape:window-y="27"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg2" />
+     inkscape:current-layer="svg2">
+    <inkscape:grid
+       type="xygrid"
+       id="grid4184" />
+  </sodipodi:namedview>
   <style
      type="text/css"
      id="style4">.icon-canvas-transparent{opacity:0;fill:#F6F6F6;} .icon-vs-out{opacity:0;fill:#F6F6F6;} .icon-vs-fg{opacity:0;fill:#F0EFF1;} .icon-folder{fill:#C5C5C5;}</style>
   <path
-     class="icon-canvas-transparent"
-     d="M16 16h-16v-16h16v16z"
-     id="canvas" />
-  <path
-     class="icon-vs-out"
-     d="M16 2.5v10c0 .827-.673 1.5-1.5 1.5h-11.996c-.827 0-1.5-.673-1.5-1.5v-8c0-.827.673-1.5 1.5-1.5h2.886l1-2h8.11c.827 0 1.5.673 1.5 1.5z"
-     id="outline" />
-  <path
-     class="icon-folder"
-     d="M14.5 2h-7.492l-1 2h-3.504c-.277 0-.5.224-.5.5v8c0 .276.223.5.5.5h11.996c.275 0 .5-.224.5-.5v-10c0-.276-.225-.5-.5-.5zm-.496 2h-6.496l.5-1h5.996v1z"
-     id="iconBg"
-     style="fill:#1ff147;fill-opacity:1" />
-  <path
-     class="icon-vs-fg"
-     d="M14 3v1h-6.5l.5-1h6z"
-     id="iconFg" />
+     style="fill:none;fill-rule:evenodd;stroke:#35da3d;stroke-width:1.39999998;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="M 3.0194497,10.891328 8.0850817,5.6376765 12.974687,10.833596"
+     id="path4182"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="ccc" />
 </svg>

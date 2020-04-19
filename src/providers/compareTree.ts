@@ -42,8 +42,8 @@ export class FtpTreeDataProvider implements TreeDataProvider<ITreeNode> {
 				title: 'Kirby FTP: Open'
 			},
 			iconPath: {
-				light: element.isFolder ? path.join(__filename, '..', '..', '..', 'resources', 'light', element.iconName + '.svg') : path.join(__filename, '..', '..', '..', 'resources', 'light', element.iconName + '.svg'),
-				dark: element.isFolder ? path.join(__filename, '..', '..', '..', 'resources', 'dark', element.iconName + '.svg') : path.join(__filename, '..', '..', '..', 'resources', 'dark', element.iconName + '.svg')
+				light: element.isFolder ? path.join(__filename, '..', '..', '..', 'resources','newcons', 'light', element.iconName + '.svg') : path.join(__filename, '..', '..', '..', 'resources','newcons', 'light', element.iconName + '.svg'),
+				dark: element.isFolder ? path.join(__filename, '..', '..', '..', 'resources','newcons', 'dark', element.iconName + '.svg') : path.join(__filename, '..', '..', '..', 'resources','newcons', 'dark', element.iconName + '.svg')
 			},
 			contextValue: element.contextValue
 		};
