@@ -40,6 +40,8 @@ export class Directory implements vscode.FileStat {
         this.name = name;
         this.entries = new Map();
     }
+
+    
 }
 
 export type Entry = File | Directory;
@@ -77,7 +79,7 @@ export class KirbyFileSystemProvider implements vscode.FileSystemProvider {
         throw vscode.FileSystemError.FileNotFound();
     }
 
-    writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void {
+    openFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void {
         let basename = path.posix.basename(uri.path);
         let parent = this._lookupParentDirectory(uri);
         let entry = parent.entries.get(basename);
@@ -100,6 +102,11 @@ export class KirbyFileSystemProvider implements vscode.FileSystemProvider {
         entry.data = content;
 
         this._fireSoon({ type: vscode.FileChangeType.Changed, uri });
+    }
+
+    writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void {
+        this.openFile(uri,content,options);
+        var a=1; //also write file??
     }
 
     // --- manage files/folders
@@ -224,6 +231,7 @@ export class KirbyFileSystemProvider implements vscode.FileSystemProvider {
             this._bufferedEvents.length = 0;
         }, 5);
     }
+    
 }
 
 // export class KirbyFileSystemProvider implements vscode.FileSystemProvider {

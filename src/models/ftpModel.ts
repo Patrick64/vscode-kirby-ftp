@@ -250,7 +250,7 @@ export class FtpModel {
 		// var filepath = path.join(workspaceFolder.uri.fsPath, ".vscode/kirby-ftp/tmp", node.name);
 		return this.getBuffer(node).then(async (content) => {
 			const uri = Uri.parse("kirby:/" + node.name);
-			await kirbyFileSystemProvider.writeFile(uri,content,{create:true,overwrite:true});
+			await kirbyFileSystemProvider.openFile(uri,content,{create:true,overwrite:true});
 			return uri;
 		});
 	}

@@ -1,9 +1,9 @@
 import { CompareNodeState } from "../lib/compareNodeState";
-
+import * as vscode from 'vscode'
 
 export interface ITreeNode {
     
-
+    resource: vscode.Uri;
 	path: string;
     
     name: string;
