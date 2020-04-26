@@ -193,7 +193,9 @@ export class FtpModel {
 	public writeFileFromStream(node:FtpNode,stream) {
 		return new Promise((resolve,reject) => {
 			// stream.once('end', resolve);
-			stream.once('error', reject);
+			if (stream.once) {
+				stream.once('error', reject);
+			}
 			this.client.put(stream,node.path,resolve);
 			
 		})
@@ -246,13 +248,19 @@ export class FtpModel {
 		});
 	}
 
-	public getUri(node:FtpNode,workspaceFolder:WorkspaceFolder):Promise<Uri> {
+		public async getUri(node:FtpNode,workspaceFolder:WorkspaceFolder):Promise<Uri> {
 		// var filepath = path.join(workspaceFolder.uri.fsPath, ".vscode/kirby-ftp/tmp", node.name);
-		return this.getBuffer(node).then(async (content) => {
-			const uri = Uri.parse("kirby:/" + node.name);
-			await kirbyFileSystemProvider.openFile(uri,content,{create:true,overwrite:true});
-			return uri;
-		});
+		const content:Buffer = await this.getBuffer(node);
+		// const uri = Uri.parse("kirby:/" + node.name);
+		await kirbyFileSystemProvider.openFile(
+			node.resource,
+			content,
+			(uri,newContent) => {
+				// user has saved file
+				this.writeFileFromStream(node,newContent);
+			} );
+		return node.resource;
+	
 	}
 }
 

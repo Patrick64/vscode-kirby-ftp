@@ -6,7 +6,7 @@ export class FtpNode {
 	private _resource: Uri;
 
 	constructor(private entry, private host: string, private _parent: string) {
-		var uri = `ftp://${host}${_parent}${entry.name}`;
+		var uri = `kirby://${host}${_parent}${entry.name}`;
 		this._resource = Uri.parse(uri);
 	}
 

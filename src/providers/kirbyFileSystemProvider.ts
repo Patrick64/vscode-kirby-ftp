@@ -13,6 +13,9 @@ export class File implements vscode.FileStat {
     name: string;
     data?: Uint8Array;
 
+    /** Function to call when user saves file which will then write to ftp or semething */
+    saveFile: Function;
+    
     constructor(name: string) {
         this.type = vscode.FileType.File;
         this.ctime = Date.now();
@@ -79,7 +82,8 @@ export class KirbyFileSystemProvider implements vscode.FileSystemProvider {
         throw vscode.FileSystemError.FileNotFound();
     }
 
-    openFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void {
+    openFile(uri: vscode.Uri, content: Uint8Array, saveFile:Function): void {
+        const options = {create:true, overwrite: true};
         let basename = path.posix.basename(uri.path);
         let parent = this._lookupParentDirectory(uri);
         let entry = parent.entries.get(basename);
@@ -100,13 +104,35 @@ export class KirbyFileSystemProvider implements vscode.FileSystemProvider {
         entry.mtime = Date.now();
         entry.size = content.byteLength;
         entry.data = content;
-
+        entry.saveFile = saveFile;
         this._fireSoon({ type: vscode.FileChangeType.Changed, uri });
     }
 
+    /**
+     * Function called when user Saves this file
+     * @param uri 
+     * @param content 
+     * @param options 
+     */
     writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void {
-        this.openFile(uri,content,options);
+        //this.openFile(uri,content,options);
         var a=1; //also write file??
+        let basename = path.posix.basename(uri.path);
+        let parent = this._lookupParentDirectory(uri);
+        let entry = parent.entries.get(basename);
+        if (entry instanceof Directory) {
+            throw vscode.FileSystemError.FileIsADirectory(uri);
+        }
+        if (entry) {
+            entry.mtime = Date.now();
+            entry.size = content.byteLength;
+            entry.data = content;
+            if (entry.saveFile) {
+                // save file to ftp etc
+                entry.saveFile(uri,content);
+            }
+            this._fireSoon({ type: vscode.FileChangeType.Changed, uri });
+        }
     }
 
     // --- manage files/folders
