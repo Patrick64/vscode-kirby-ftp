@@ -174,4 +174,9 @@ export class DiskModel {
 	public getUri(node:DiskNode):Promise<Uri> {
 		return Promise.resolve(Uri.file(node.path));
 	}
+
+	public async openForEditor(node,onSaveFile:Function) {
+		// todo: think about this
+		return;
+	}
 }

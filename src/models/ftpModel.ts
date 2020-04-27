@@ -249,19 +249,21 @@ export class FtpModel {
 	}
 
 		public async getUri(node:FtpNode,workspaceFolder:WorkspaceFolder):Promise<Uri> {
+			return node.resource;
+		}
+
+		public async openForEditor(node:FtpNode,onSaveFile:Function) {
 		// var filepath = path.join(workspaceFolder.uri.fsPath, ".vscode/kirby-ftp/tmp", node.name);
 		const content:Buffer = await this.getBuffer(node);
 		// const uri = Uri.parse("kirby:/" + node.name);
 		await kirbyFileSystemProvider.openFile(
 			node.resource,
 			content,
-			(uri,newContent) => {
-				// user has saved file
-				this.writeFileFromStream(node,newContent);
-			} );
-		return node.resource;
+			onSaveFile
+		);
+		}
 	
-	}
+	
 }
 
 

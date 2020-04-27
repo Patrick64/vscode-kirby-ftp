@@ -10,6 +10,7 @@ import { PromiseQueue } from '../modules/promiseQueue';
 import { CompareNodeState } from '../lib/compareNodeState';
 import { Database } from '../modules/database';
 import { ISyncInfo, ISyncInfoNode } from '../interfaces/iSyncInfo';
+import { kirbyFileSystemProvider } from '../providers/kirbyFileSystemProvider';
 
 export class CompareModel {
 	
@@ -206,6 +207,15 @@ export class CompareModel {
 		.then(() => compareAllFolders())
 		.then(() => node.updateFolderState());
 		
+	}
+
+	public async refreshJustThisFile(node:CompareNode) {
+		await this.refreshFolder(node.parentNode,true);
+		await this.refreshFolder(node.parentNode,false);
+		await node.doComparison(this.localModel,this.remoteModel);
+		// await node.updateFolderState();
+		// this.nodeUpdated(null);
+		this.nodeUpdated(node);
 	}
 
 	private async doFullRefresh(node:CompareNode) {
@@ -438,28 +448,45 @@ export class CompareModel {
 		this.nodeUpdated(node);
 	}
 
-	
+	public async saveLocalFile(node:CompareNode,content:Buffer,newContent:Buffer) {
+		if (Buffer.compare(content,newContent) !== 0) {
+			this.setNodeIsLoading(node,false);
+			await this.localModel.writeFileFromStream(node.localNode,newContent);
+			await this.refreshJustThisFile(node);
+			vscode.window.showInformationMessage(node.name + " uploaded");
+		}
+	}
 
+	public async saveRemoteFile(node:CompareNode,content:Buffer,newContent:Buffer) {
+		if (Buffer.compare(content,newContent) !== 0) {
+			this.setNodeIsLoading(node,false);
+			await this.remoteModel.writeFileFromStream(node.remoteNode,newContent);
+			vscode.window.showInformationMessage(node.name + " uploaded");
+		}
+		await this.refreshJustThisFile(node);
+	}
 	public openDiff(node) {
 		this.setNodeIsLoading(node,true);
 		this.promiseQueue.addToQueue(async () => {
 			
 			if (node.localNode && node.remoteNode) {
-				
-				return Promise.all([this.localModel.getUri(node.localNode,this.profileNode.workspaceFolder),
-					this.remoteModel.getUri(node.remoteNode,this.profileNode.workspaceFolder)]) 
-				.then(([localUri,remoteUri]) => { 
-					try { 
+				try {
+				const [localUri,remoteUri] = await Promise.all([
+					this.localModel.getUri(node.localNode,this.profileNode.workspaceFolder),
+					this.remoteModel.getUri(node.remoteNode,this.profileNode.workspaceFolder)]);
+					await Promise.all([
+						this.localModel.openForEditor(node.localNode,this.saveLocalFile.bind(this,node)),
+						this.remoteModel.openForEditor(node.remoteNode,this.saveRemoteFile.bind(this,node)),
+					])
 						this.setNodeIsLoading(node,false);
+							
 						vscode.commands.executeCommand("vscode.diff",localUri,remoteUri,  node.name + " <-> " + " Remote", { originalEditable:true, readOnly:false } );  
-					} catch(err) { 
-						return Promise.reject(err); 
-					}
-				}).catch((err) => { 
+					
+				} catch(err) {
 					vscode.window.showErrorMessage("Kirby FTP: " + err); 
 					console.log(err); 
 					this.setNodeIsLoading(node,false);
-				});
+				}
 				
 			} else if (node.localNode || node.remoteNode) {
 				this.setNodeIsLoading(node,true);

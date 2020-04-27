@@ -14,7 +14,7 @@ export class File implements vscode.FileStat {
     data?: Uint8Array;
 
     /** Function to call when user saves file which will then write to ftp or semething */
-    saveFile: Function;
+    onSaveFile: Function;
     
     constructor(name: string) {
         this.type = vscode.FileType.File;
@@ -82,7 +82,7 @@ export class KirbyFileSystemProvider implements vscode.FileSystemProvider {
         throw vscode.FileSystemError.FileNotFound();
     }
 
-    openFile(uri: vscode.Uri, content: Uint8Array, saveFile:Function): void {
+    openFile(uri: vscode.Uri, content: Uint8Array, onSaveFile:Function): void {
         const options = {create:true, overwrite: true};
         let basename = path.posix.basename(uri.path);
         let parent = this._lookupParentDirectory(uri);
@@ -104,7 +104,7 @@ export class KirbyFileSystemProvider implements vscode.FileSystemProvider {
         entry.mtime = Date.now();
         entry.size = content.byteLength;
         entry.data = content;
-        entry.saveFile = saveFile;
+        entry.onSaveFile = onSaveFile;
         this._fireSoon({ type: vscode.FileChangeType.Changed, uri });
     }
 
@@ -124,12 +124,13 @@ export class KirbyFileSystemProvider implements vscode.FileSystemProvider {
             throw vscode.FileSystemError.FileIsADirectory(uri);
         }
         if (entry) {
+            const oldContent = entry.data;
             entry.mtime = Date.now();
             entry.size = content.byteLength;
             entry.data = content;
-            if (entry.saveFile) {
+            if (entry.onSaveFile) {
                 // save file to ftp etc
-                entry.saveFile(uri,content);
+                entry.onSaveFile(oldContent,content);
             }
             this._fireSoon({ type: vscode.FileChangeType.Changed, uri });
         }

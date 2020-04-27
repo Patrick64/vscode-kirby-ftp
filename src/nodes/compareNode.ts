@@ -19,7 +19,7 @@ export class CompareNode implements ITreeNode {
 	private profiles:ITreeNode;
 	public nodeState: CompareNodeState = CompareNodeState.unknown;
 	public isLoading:boolean = false;
-	
+	private priorSyncInfoNode = null;
 	/** if we couldn't connect to this node for some reson  */
 	public isFailed:boolean = false; 
 	
@@ -108,7 +108,8 @@ export class CompareNode implements ITreeNode {
 	}
 
 
-	public async doComparison(localModel, remoteModel, priorSyncInfoNode:ISyncInfoNode):Promise<void> {
+	public async doComparison(localModel, remoteModel, priorSyncInfoNode:ISyncInfoNode = null):Promise<void> {
+		if (priorSyncInfoNode) this.priorSyncInfoNode = priorSyncInfoNode;
 		try {
 		if (this.isFolder) {
 			this.nodeState = CompareNodeState.unknown; // leave until updateFolderState is called.
@@ -120,24 +121,24 @@ export class CompareNode implements ITreeNode {
             this.nodeState = CompareNodeState.localOnly;
         } else if (this.isFolder) {
 			this.nodeState = CompareNodeState.unknown; // leave until updateFolderState is called.
-		} else if (this.isSyncInfoEqual(priorSyncInfoNode)) {
+		} else if (this.isSyncInfoEqual(this.priorSyncInfoNode)) {
 			// both local and remote files haven't changed since we last looked 
 			// so use the state we recorded then to save time
-			this.nodeState = priorSyncInfoNode.nodeState;
-		} else if (this.isSyncInfoShowLocalHasChanged(priorSyncInfoNode)) {
+			this.nodeState = this.priorSyncInfoNode.nodeState;
+		} else if (this.isSyncInfoShowLocalHasChanged(this.priorSyncInfoNode)) {
 			const isEqual = await this.doFullFileComparison(localModel, remoteModel);
 			if (isEqual) {
 				this.nodeState = CompareNodeState.equal;
-			} else if (priorSyncInfoNode.nodeState == CompareNodeState.equal || priorSyncInfoNode.nodeState == CompareNodeState.localChanged) {
+			} else if (this.priorSyncInfoNode.nodeState == CompareNodeState.equal || this.priorSyncInfoNode.nodeState == CompareNodeState.localChanged) {
 				this.nodeState = CompareNodeState.localChanged;
 			} else {
 				this.nodeState = CompareNodeState.unequal;
 			}
-		} else if (this.isSyncInfoShowRemoteHasChanged(priorSyncInfoNode)) {
+		} else if (this.isSyncInfoShowRemoteHasChanged(this.priorSyncInfoNode)) {
 			const isEqual = await this.doFullFileComparison(localModel, remoteModel);
 			if (isEqual) {
 				this.nodeState = CompareNodeState.equal;
-			} else if (priorSyncInfoNode.nodeState == CompareNodeState.equal || priorSyncInfoNode.nodeState == CompareNodeState.remoteChanged) {
+			} else if (this.priorSyncInfoNode.nodeState == CompareNodeState.equal || this.priorSyncInfoNode.nodeState == CompareNodeState.remoteChanged) {
 				this.nodeState = CompareNodeState.remoteChanged;
 			} else {
 				this.nodeState = CompareNodeState.unequal;
@@ -249,41 +250,48 @@ export class CompareNode implements ITreeNode {
 		return this.compareModel.sort(this.compareModel.filterByStates(filterByStates,this.children));
 	}
 
+	/**
+	 * Recursively update the states of folders
+	 */
 	public updateFolderState() {
-		var newState:CompareNodeState = CompareNodeState.equal;
-		if (!this.localNode && !this.remoteNode) {
-            this.nodeState = CompareNodeState.error;
-        } else	if (!this.localNode) {
-            this.nodeState = CompareNodeState.remoteOnly;
-        } else if (!this.remoteNode) {
-			this.nodeState = CompareNodeState.localOnly;
-		} else if (this.children.length==0) {
-			this.nodeState = CompareNodeState.equal;
-		} else {
-			var states = this.children.reduce((states: CompareNodeState[], childNode: CompareNode) => {
-				if (states.indexOf(childNode.nodeState)==-1) states.push(childNode.nodeState)
-				return states;
-				// if (childNode.nodeState > newState) return childNode.nodeState; else return newState;
-				// if (newState == CompareNodeState.equal)
-			}, []);
-			if (states.indexOf(CompareNodeState.unknown)!=-1)
-				this.nodeState = CompareNodeState.unknown;
-			else if (states.indexOf(CompareNodeState.error)!=-1)
-				this.nodeState = CompareNodeState.error;
-			else if (states.indexOf(CompareNodeState.conflict) != -1 || states.indexOf(CompareNodeState.unequal) != -1)
-				this.nodeState = CompareNodeState.unequal;
-			else if ((states.indexOf(CompareNodeState.localOnly) != -1 || states.indexOf(CompareNodeState.localChanged) != -1) &&
-				(states.indexOf(CompareNodeState.remoteOnly) == -1 || states.indexOf(CompareNodeState.remoteChanged) == -1)) 
-				this.nodeState = CompareNodeState.localChanged;
-			else if ((states.indexOf(CompareNodeState.remoteOnly) != -1 || states.indexOf(CompareNodeState.remoteChanged) != -1) &&
-				(states.indexOf(CompareNodeState.localOnly) == -1 || states.indexOf(CompareNodeState.localChanged) == -1)) 
-				this.nodeState = CompareNodeState.remoteChanged;
-			else if (states.length==0 || (states.length==1 && states[0] == CompareNodeState.equal))
-				this.nodeState = CompareNodeState.equal;
-			else
-				this.nodeState == CompareNodeState.bothChanged;
-			
+		if (this.isFolder) {
+			var newState:CompareNodeState = CompareNodeState.equal;
+			if (!this.localNode && !this.remoteNode) {
+				newState = CompareNodeState.error;
+			} else	if (!this.localNode) {
+				newState = CompareNodeState.remoteOnly;
+			} else if (!this.remoteNode) {
+				newState = CompareNodeState.localOnly;
+			} else if (this.children.length==0) {
+				newState = CompareNodeState.equal;
+			} else {
+				var states = this.children.reduce((states: CompareNodeState[], childNode: CompareNode) => {
+					if (states.indexOf(childNode.nodeState)==-1) states.push(childNode.nodeState)
+					return states;
+					// if (childNode.nodeState > newState) return childNode.nodeState; else return newState;
+					// if (newState == CompareNodeState.equal)
+				}, []);
+				if (states.indexOf(CompareNodeState.unknown)!=-1)
+					newState = CompareNodeState.unknown;
+				else if (states.indexOf(CompareNodeState.error)!=-1)
+					newState = CompareNodeState.error;
+				else if (states.indexOf(CompareNodeState.conflict) != -1 || states.indexOf(CompareNodeState.unequal) != -1)
+					newState = CompareNodeState.unequal;
+				else if ((states.indexOf(CompareNodeState.localOnly) != -1 || states.indexOf(CompareNodeState.localChanged) != -1) &&
+					(states.indexOf(CompareNodeState.remoteOnly) == -1 || states.indexOf(CompareNodeState.remoteChanged) == -1)) 
+					newState = CompareNodeState.localChanged;
+				else if ((states.indexOf(CompareNodeState.remoteOnly) != -1 || states.indexOf(CompareNodeState.remoteChanged) != -1) &&
+					(states.indexOf(CompareNodeState.localOnly) == -1 || states.indexOf(CompareNodeState.localChanged) == -1)) 
+					newState = CompareNodeState.remoteChanged;
+				else if (states.length==0 || (states.length==1 && states[0] == CompareNodeState.equal))
+					newState = CompareNodeState.equal;
+				else
+					newState = CompareNodeState.bothChanged;
+				
 
+			}
+
+			this.nodeState = newState;
 		}
 		if (this._parent) this.parentNode.updateFolderState();
 	}
