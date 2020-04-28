@@ -215,7 +215,13 @@ export class CompareModel {
 		await node.doComparison(this.localModel,this.remoteModel);
 		// await node.updateFolderState();
 		// this.nodeUpdated(null);
+		await this.saveSyncInfo();
 		this.nodeUpdated(node);
+	}
+
+	private async saveSyncInfo() {
+		const syncInfo = this.profileNode.getSyncInfo();
+		await this.database.storeSyncInfo(syncInfo);
 	}
 
 	private async doFullRefresh(node:CompareNode) {
@@ -230,8 +236,7 @@ export class CompareModel {
 		.pause(500)
 		.then(() => this.doComparisonsRecursivly(node,priorSyncInfo ? priorSyncInfo.nodes : null))
 		.then(async () => {
-			const syncInfo = this.profileNode.getSyncInfo();
-			await this.database.storeSyncInfo(syncInfo);
+			this.saveSyncInfo();
 			//const stored = await this.database.getSyncInfo(syncInfo);
 			
 		})

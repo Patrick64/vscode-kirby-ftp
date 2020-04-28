@@ -19,7 +19,7 @@ export class CompareNode implements ITreeNode {
 	private profiles:ITreeNode;
 	public nodeState: CompareNodeState = CompareNodeState.unknown;
 	public isLoading:boolean = false;
-	private priorSyncInfoNode = null;
+	private priorSyncInfoNode:ISyncInfoNode = null;
 	/** if we couldn't connect to this node for some reson  */
 	public isFailed:boolean = false; 
 	
@@ -156,6 +156,7 @@ export class CompareNode implements ITreeNode {
 			
             // }, 1000 );
 		}
+		this.setPriorSyncInfoNode();
 	} catch(err) {
 		this.nodeState = CompareNodeState.error;
 		throw (err);
@@ -315,16 +316,21 @@ export class CompareNode implements ITreeNode {
 			}
 
 		} else {
-			
-			return {
-				nodeState: this.nodeState,
-				isFolder:false,
-				local: this.localNode ? this.localNode.getSyncInfo() : null,
-				remote: this.remoteNode ? this.remoteNode.getSyncInfo() : null
-			};
+			this.setPriorSyncInfoNode();
+			return this.priorSyncInfoNode;
 			
 		}
 		
+	}
+
+	private setPriorSyncInfoNode() {
+		if (this.isFolder) throw "files only";
+		this.priorSyncInfoNode = {
+			nodeState: this.nodeState,
+			isFolder:false,
+			local: this.localNode ? this.localNode.getSyncInfo() : null,
+			remote: this.remoteNode ? this.remoteNode.getSyncInfo() : null
+		};
 	}
 
 }
