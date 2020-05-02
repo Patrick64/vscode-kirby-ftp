@@ -12,12 +12,15 @@ import { Database } from '../modules/database';
 import { ISyncInfo, ISyncInfoNode } from '../interfaces/iSyncInfo';
 import { kirbyFileSystemProvider } from '../providers/kirbyFileSystemProvider';
 
+function sleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+  }
 export class CompareModel {
 	
 	
 	private hasUserRequestedAPause: boolean = false;
 	private promiseQueue:PromiseQueue;
-	
+	private priorSyncInfo:ISyncInfo | null = null;
 
 	
 	constructor(private localModel, private remoteModel, private nodeUpdated:Function, private profileNode: ProfileNode,private database: Database) {
@@ -36,10 +39,10 @@ export class CompareModel {
 	public connect():Promise<void> {
 		vscode.window.setStatusBarMessage("Kirby FTP: Connecting to remote...");
 		return Promise.all([this.localModel.connect(), this.remoteModel.connect()]).then(() => {})
-		.then(() => {
+		.then(async () => {
 			this.profileNode.connectionStatus = ConnectionStatus.Connected;
 			this.nodeUpdated(this.profileNode);
-			
+			this.priorSyncInfo = await this.profileNode.getSyncInfoFromDatabase();
 		})
 		.catch((err) => {
 			vscode.window.setStatusBarMessage("Kirby FTP: " + err);
@@ -105,7 +108,23 @@ export class CompareModel {
 	// 	});
 	// }
 
-	private refreshFolder(node:CompareNode,isLocal:boolean) {
+	public getSyncInfoForNode(node:CompareNode):ISyncInfoNode | null {
+		//  get array of nodes leading to this one ie ["wp-content","themes","mytheme"]
+		const path = node.getParentNodes();
+		path.push(node);
+		path.shift(); // remove the profile node
+		// starting from the root work up the tree to find the correct prior sync node
+		return path.reduce((syncNode,compareNode)=> {
+			if (syncNode !== null && syncNode.children[compareNode.name]) {
+				return syncNode.children[compareNode.name];
+			} else {
+				return null;
+			}
+		},this.priorSyncInfo.nodes)
+	}
+
+
+	private async refreshFolder(node:CompareNode,isLocal:boolean):Promise<void> {
 		var model = isLocal ? this.localModel : this.remoteModel;
 		var localOrRemoteNode = isLocal ? node.localNode : node.remoteNode;
 
@@ -113,8 +132,8 @@ export class CompareModel {
 		var parentPath = !isRootNode ? node.path : path.sep;
 		if (isRootNode || localOrRemoteNode) {
 			var getNodesFunc = isRootNode ? model.roots : model.getChildren(localOrRemoteNode);
-			return getNodesFunc.then((newNodes) => {
-				
+			const newNodes = await getNodesFunc;
+			try {
 				var childrenByName = node.children.reduce( (p,c) => { p[c.name] = c; return p; }, {} );
 				newNodes.forEach( newNode => {
 					
@@ -144,9 +163,9 @@ export class CompareModel {
 				this.removeNodelessChildren(node);	
 				this.updateFolderStateRecursive(node);
 				this.nodeUpdated(node);
-			}).catch(err => {
+			} catch(err) {
 				node.isFailed = true;
-			});
+			}
 		} else {
 			if (isLocal) {
 				node.children.forEach(c => c.setLocalNode(null));
@@ -156,7 +175,6 @@ export class CompareModel {
 			this.removeNodelessChildren(node);	
 			this.updateFolderStateRecursive(node);
 			this.nodeUpdated(node);
-			return Promise.resolve();
 		}
 	}
 
@@ -164,17 +182,18 @@ export class CompareModel {
 		node.children = node.children.filter( n => (n.remoteNode || n.localNode));
 	}
 
-	private refreshFolderRecursivly(node,isLocal) {
+	private async refreshFolderRecursivly(node,isLocal) {
 		
-		return this.refreshFolder(node,isLocal).pause(this.hasUserRequestedAPause ? 500 : 0).then(() => {
-			this.hasUserRequestedAPause = false;
-			return node.children
+		await this.refreshFolder(node,isLocal);
+		await sleep(this.hasUserRequestedAPause ? 500 : 0)
+		this.hasUserRequestedAPause = false;
+		return node.children
 			.filter( c => c.isFolder )
 			.reduce( (promise,subFolder) => promise.then(() => this.refreshFolderRecursivly(subFolder,isLocal) ), Promise.resolve())
 			.then(() => {
 				this.nodeUpdated(node.isRootNode ? null : node);
 			});
-		});
+		
 		
 	}
 
@@ -225,18 +244,18 @@ export class CompareModel {
 	}
 
 	private async doFullRefresh(node:CompareNode) {
-		const priorSyncInfo:ISyncInfo = await this.profileNode.getSyncInfoFromDatabase();
+		
 		return this.refreshFolderRecursivly(node,true)
 		.then(() => this.nodeUpdated(null))
-		.pause(500)
+		.then(()=>sleep(500))
 		.then(() => {
 			return this.refreshFolderRecursivly(node,false)
 		})
 		.then(() => this.nodeUpdated(null))
-		.pause(500)
-		.then(() => this.doComparisonsRecursivly(node,priorSyncInfo ? priorSyncInfo.nodes : null))
+		.then(()=>sleep(500))
+		.then(() => this.doComparisonsRecursivly(node,this.priorSyncInfo ? this.priorSyncInfo.nodes : null))
 		.then(async () => {
-			this.saveSyncInfo();
+			await this.saveSyncInfo();
 			//const stored = await this.database.getSyncInfo(syncInfo);
 			
 		})
@@ -378,7 +397,7 @@ export class CompareModel {
 	}
 
 	private canUploadFolder(node:CompareNode):boolean {
-		return (node.isFolder && node.localNode);
+		return (node.isFolder && node.localNode !== null);
 
 	}
 

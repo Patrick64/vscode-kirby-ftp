@@ -1,11 +1,11 @@
 import { ExtensionContext, TreeDataProvider, EventEmitter, TreeItem, Event, window, TreeItemCollapsibleState, Uri, commands, workspace, TextDocumentContentProvider, CancellationToken, ProviderResult, WorkspaceFolder } from 'vscode';
-
+import { FileNode } from './fileNode';
 import * as path from 'path';
 
-export class FtpNode {
-	private _resource: Uri;
-
+export class FtpNode extends FileNode {
+	
 	constructor(private entry, private host: string, private _parent: string) {
+		super();
 		var uri = `kirby://${host}${_parent}${entry.name}`;
 		this._resource = Uri.parse(uri);
 	}
@@ -34,19 +34,5 @@ export class FtpNode {
 		return this.entry.size;
 	}
 
-	/**
-	 * Get size and modified date @see CompareNode::getSyncInfo
-	 */
-	public getSyncInfo() {
-		return {
-			size: this.size,
-			modified: this.dateLastModified
-		}
-	}
 
-	public isSyncInfoEqual(syncInfo) {
-		return (syncInfo.size == this.size && 
-			new Date(syncInfo.modified).toString() == new Date(this.dateLastModified).toString());
-			
-	}
 }

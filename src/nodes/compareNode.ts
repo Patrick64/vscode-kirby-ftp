@@ -9,6 +9,8 @@ import { CompareNodeState, getCompareNodeStateString } from '../lib/compareNodeS
 import { timingSafeEqual } from 'crypto';
 import { ISyncInfoNode } from '../interfaces/iSyncInfo';
 
+import * as hasha from 'hasha';
+import { FileNode } from './fileNode';
 
 
 
@@ -27,15 +29,19 @@ export class CompareNode implements ITreeNode {
 	
 	// private _rando:number;
 
-	constructor(public localNode, 
-		public remoteNode, 
+	constructor(public localNode:FileNode | null, 
+		public remoteNode:FileNode | null, 
 		protected _parent: string, 
 		protected filename: string, 
 		protected _isFolder: boolean, 
 		public parentNode: CompareNode, 
 		public compareModel:CompareModel) {
 		
-		
+			if (compareModel) {
+				this.priorSyncInfoNode = compareModel.getSyncInfoForNode(this);
+			} else {
+			}
+			var a=1;
 		
 	}
 
@@ -109,7 +115,10 @@ export class CompareNode implements ITreeNode {
 
 
 	public async doComparison(localModel, remoteModel, priorSyncInfoNode:ISyncInfoNode = null):Promise<void> {
-		if (priorSyncInfoNode) this.priorSyncInfoNode = priorSyncInfoNode;
+		//if (priorSyncInfoNode) this.priorSyncInfoNode = priorSyncInfoNode;
+		if (this.localNode && this.priorSyncInfoNode?.local?.hash) this.localNode.hash = this.priorSyncInfoNode.local.hash;
+		if (this.remoteNode && this.priorSyncInfoNode?.remote?.hash) this.remoteNode.hash = this.priorSyncInfoNode.remote.hash;
+		
 		try {
 		if (this.isFolder) {
 			this.nodeState = CompareNodeState.unknown; // leave until updateFolderState is called.
@@ -121,28 +130,72 @@ export class CompareNode implements ITreeNode {
             this.nodeState = CompareNodeState.localOnly;
         } else if (this.isFolder) {
 			this.nodeState = CompareNodeState.unknown; // leave until updateFolderState is called.
-		} else if (this.isSyncInfoEqual(this.priorSyncInfoNode)) {
+		} else if (this.priorSyncInfoNode && this.isSyncInfoEqual(this.priorSyncInfoNode)) {
 			// both local and remote files haven't changed since we last looked 
 			// so use the state we recorded then to save time
 			this.nodeState = this.priorSyncInfoNode.nodeState;
-		} else if (this.isSyncInfoShowLocalHasChanged(this.priorSyncInfoNode)) {
-			const isEqual = await this.doFullFileComparison(localModel, remoteModel);
+		} else if (!this.priorSyncInfoNode || !this.isSyncInfoEqual(this.priorSyncInfoNode)) {
+			const {isEqual, localHash, remoteHash} = await this.doFullFileComparison(localModel, remoteModel);
+			this.localNode.hash = localHash;
+			this.remoteNode.hash = remoteHash;
+			const localHashSame = (this.priorSyncInfoNode?.local?.hash && this.priorSyncInfoNode.local.hash == localHash )
+			const remoteHashSame = (this.priorSyncInfoNode?.remote?.hash && this.priorSyncInfoNode.remote.hash == remoteHash )
+			const priorNodeState = this.priorSyncInfoNode.nodeState;
 			if (isEqual) {
 				this.nodeState = CompareNodeState.equal;
-			} else if (this.priorSyncInfoNode.nodeState == CompareNodeState.equal || this.priorSyncInfoNode.nodeState == CompareNodeState.localChanged) {
+			} else if (localHashSame && remoteHashSame) {
+				this.nodeState = this.priorSyncInfoNode.nodeState;
+			} else if (localHashSame && (priorNodeState === CompareNodeState.equal || priorNodeState === CompareNodeState.remoteChanged)) {
+				this.nodeState = CompareNodeState.remoteChanged;
+			} else if (remoteHashSame && (priorNodeState === CompareNodeState.equal || priorNodeState === CompareNodeState.localChanged)) {
 				this.nodeState = CompareNodeState.localChanged;
 			} else {
 				this.nodeState = CompareNodeState.unequal;
 			}
-		} else if (this.isSyncInfoShowRemoteHasChanged(this.priorSyncInfoNode)) {
-			const isEqual = await this.doFullFileComparison(localModel, remoteModel);
-			if (isEqual) {
-				this.nodeState = CompareNodeState.equal;
-			} else if (this.priorSyncInfoNode.nodeState == CompareNodeState.equal || this.priorSyncInfoNode.nodeState == CompareNodeState.remoteChanged) {
-				this.nodeState = CompareNodeState.remoteChanged;
-			} else {
-				this.nodeState = CompareNodeState.unequal;
-			}
+
+			// } else if (this.priorSyncInfoNode.nodeState == CompareNodeState.equal || this.priorSyncInfoNode.nodeState == CompareNodeState.localChanged) {
+			// 	this.nodeState = CompareNodeState.localChanged;
+			// } else if (this.priorSyncInfoNode.nodeState == CompareNodeState.remoteChanged && this.priorSyncInfoNode?.local?.hash && this.priorSyncInfoNode.local.hash == localHash ) {
+			// 	// previous state has remote changed and sure, the local node's date modified has changed but it's 
+			// 	// still the same file and the hashes are the same. This will happen if the user saves a file in the diff
+			// 	// view as it saves both files.
+			// 	this.nodeState = CompareNodeState.remoteChanged;
+			// } else {
+			// 	this.nodeState = CompareNodeState.unequal;
+			// }
+		
+		// } else if (this.priorSyncInfoNode && this.isSyncInfoShowLocalHasChanged(this.priorSyncInfoNode)) {
+		// 	const {isEqual, localHash, remoteHash} = await this.doFullFileComparison(localModel, remoteModel);
+		// 	this.localNode.hash = localHash;
+		// 	this.remoteNode.hash = remoteHash;
+		// 	if (isEqual) {
+		// 		this.nodeState = CompareNodeState.equal;
+		// 	} else if (this.priorSyncInfoNode.nodeState == CompareNodeState.equal || this.priorSyncInfoNode.nodeState == CompareNodeState.localChanged) {
+		// 		this.nodeState = CompareNodeState.localChanged;
+		// 	} else if (this.priorSyncInfoNode.nodeState == CompareNodeState.remoteChanged && this.priorSyncInfoNode?.local?.hash && this.priorSyncInfoNode.local.hash == localHash ) {
+		// 		// previous state has remote changed and sure, the local node's date modified has changed but it's 
+		// 		// still the same file and the hashes are the same. This will happen if the user saves a file in the diff
+		// 		// view as it saves both files.
+		// 		this.nodeState = CompareNodeState.remoteChanged;
+		// 	} else {
+		// 		this.nodeState = CompareNodeState.unequal;
+		// 	}
+		// } else if (this.priorSyncInfoNode && this.isSyncInfoShowRemoteHasChanged(this.priorSyncInfoNode)) {
+		// 	const {isEqual, localHash, remoteHash} = await this.doFullFileComparison(localModel, remoteModel);
+		// 	this.localNode.hash = localHash;
+		// 	this.remoteNode.hash = remoteHash;
+		// 	if (isEqual) {
+		// 		this.nodeState = CompareNodeState.equal;
+		// 	} else if (this.priorSyncInfoNode.nodeState == CompareNodeState.equal || this.priorSyncInfoNode.nodeState == CompareNodeState.remoteChanged) {
+		// 		this.nodeState = CompareNodeState.remoteChanged;
+		// 	} else if (this.priorSyncInfoNode.nodeState == CompareNodeState.localChanged && this.priorSyncInfoNode?.local?.hash && this.priorSyncInfoNode.local.hash == remoteHash ) {
+		// 		// previous state has remote changed and sure, the local node's date modified has changed but it's 
+		// 		// still the same file and the hashes are the same. This will happen if the user saves a file in the diff
+		// 		// view as it saves both files.
+		// 		this.nodeState = CompareNodeState.localChanged;
+		// 	} else {
+		// 		this.nodeState = CompareNodeState.unequal;
+		// 	}
         } else if (this.localNode.size != this.remoteNode.size)  {
             this.nodeState = CompareNodeState.unequal;
         } else {
@@ -191,14 +244,29 @@ export class CompareNode implements ITreeNode {
 		&& this.remoteNode.isSyncInfoEqual(priorSyncInfoNode.remote));
 	}
 
+	private isSyncInfoShowBothHasChanged(priorSyncInfoNode:ISyncInfoNode) {
+		return (!priorSyncInfoNode.isFolder 
+		&& priorSyncInfoNode.local 
+		&& priorSyncInfoNode.remote 
+		&& !this.localNode.isSyncInfoEqual(priorSyncInfoNode.local)
+		&& !this.remoteNode.isSyncInfoEqual(priorSyncInfoNode.remote));
+	}
 
-	private doFullFileComparison(localModel, remoteModel):Promise<boolean> {
+	private doFullFileComparison(localModel, remoteModel):Promise<{isEqual:boolean,localHash:string,remoteHash:string}> {
+		vscode.window.setStatusBarMessage("Kirby FTP: Comparing " + this.name);
+			
 		return Promise.all([localModel.getBuffer(this.localNode),remoteModel.getBuffer(this.remoteNode)])
 			.then(([localBuffer, remoteBuffer]) => {
-				return FileCompare.compareBuffers(localBuffer,remoteBuffer);
+				return {
+					isEqual:FileCompare.compareBuffers(localBuffer,remoteBuffer),
+					localHash: hasha(localBuffer),
+					remoteHash: hasha(remoteBuffer)
+				};
 				// return streamEqual(localStream, remoteStream).then((isEqual) => { localStream.destroy(); remoteStream.destroy(); return isEqual;});
 			})
 	}
+
+
 
 	public openDiff() {
 		this.compareModel.openDiff(this);
@@ -333,5 +401,15 @@ export class CompareNode implements ITreeNode {
 		};
 	}
 
+	/**
+	 * Get all parents  as array
+	 */
+	public getParentNodes():CompareNode[] {
+		if (this.parentNode && typeof this.parentNode ) {
+			return [...this.parentNode.getParentNodes(),this.parentNode];
+		} else {
+			return [];
+		}
+	}
 }
 

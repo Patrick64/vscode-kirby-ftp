@@ -4,8 +4,8 @@ export interface ISyncInfoNode {
 	nodeState:CompareNodeState,
 	isFolder: boolean,
 	children?: {[index:string]:ISyncInfoNode},
-	local?: {modified:Date, size: Number},
-	remote?: {modified:Date, size: Number}
+	local?: {modified:Date, size: Number, hash: string},
+	remote?: {modified:Date, size: Number, hash: string}
 }
 
 export interface ISyncInfo {

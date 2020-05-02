@@ -162,6 +162,7 @@
   "dependencies": {
     "fs-extra": "^5.0.0",
     "ftp": "^0.3.10",
+    "hasha": "^5.2.0",
     "lokijs": "^1.5.8",
     "lokijs-promise": "^1.0.4",
     "path-is-inside": "^1.0.2",

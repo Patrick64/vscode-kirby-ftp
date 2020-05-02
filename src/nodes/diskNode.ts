@@ -1,10 +1,11 @@
 import { ExtensionContext, TreeDataProvider, EventEmitter, TreeItem, Event, window, TreeItemCollapsibleState, Uri, commands, workspace, TextDocumentContentProvider, CancellationToken, ProviderResult } from 'vscode';
 import * as path from 'path';
+import { FileNode } from './fileNode';
 
-export class DiskNode {
-	private _resource: Uri;
-
+export class DiskNode extends FileNode {
+	
 	constructor(private entry, private _parent: string) {
+		super();
 		// var uri = `ftp://${host}${_parent}${entry.name}`;
 		// this._resource = Uri.parse(uri);
 	}
@@ -33,18 +34,4 @@ export class DiskNode {
 		return this.entry.size;
 	}
 
-	/**
-	 * Get size and modified date @see CompareNode::getSyncInfo
-	 */
-	public getSyncInfo() {
-		return {
-			size: this.size,
-			modified: this.dateLastModified
-		}
-	}
-
-	public isSyncInfoEqual(syncInfo) {
-		return (syncInfo.size == this.size &&
-			new Date(syncInfo.modified).toString() == new Date(this.dateLastModified).toString());
-	}
 }
