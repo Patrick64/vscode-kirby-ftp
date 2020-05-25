@@ -171,6 +171,14 @@ export class DiskModel {
 		// });
 	}
 
+	public async writeFileFromStream(node: DiskNode,stream: Buffer) {
+		await this.writeStream(node.path,stream);
+	}
+
+	public async writeNewFileFromStream(parentFolder:DiskNode,filename:string,stream) {
+		await this.writeStream(path.join(parentFolder.path,filename), stream);
+	}
+
 	public getUri(node:DiskNode):Promise<Uri> {
 		return Promise.resolve(Uri.file(node.path));
 	}
@@ -178,5 +186,19 @@ export class DiskModel {
 	public async openForEditor(node,onSaveFile:Function) {
 		// todo: think about this
 		return;
+	}
+
+	private async writeStream(path:string, buffer: Buffer) {
+		
+		const fd = await fse.open(path, 'w');
+		
+		// write the contents of the buffer, from position 0 to the end, to the file descriptor returned in opening our file
+		// await fse.write(fd, buffer, 0, buffer.length);
+		const { bytesWritten, b } = await fse.write(fd, buffer, 0, buffer.length, 0);
+		await fse.close(fd);
+
+			
+			
+		
 	}
 }

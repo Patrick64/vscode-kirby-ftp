@@ -82,9 +82,29 @@ export class KirbyFileSystemProvider implements vscode.FileSystemProvider {
         throw vscode.FileSystemError.FileNotFound();
     }
 
+    createDirectoryTree(path) {
+        let parts = path.split('/');
+        let entry: Entry = this.root;
+        let curPath = '';
+        for (const part of parts) {
+            if (!part) {
+                continue;
+            }
+            curPath += '/' + part;
+            let child: Entry | undefined;
+            if (entry instanceof Directory) {
+                child = entry.entries.get(part);
+                this.createDirectory(vscode.Uri.parse(curPath));
+                child = entry.entries.get(part);
+            }
+            entry = child;
+        }
+    }
+
     openFile(uri: vscode.Uri, content: Uint8Array, onSaveFile:Function): void {
         const options = {create:true, overwrite: true};
         let basename = path.posix.basename(uri.path);
+        this.createDirectoryTree(path.posix.dirname(uri.path));
         let parent = this._lookupParentDirectory(uri);
         let entry = parent.entries.get(basename);
         if (entry instanceof Directory) {

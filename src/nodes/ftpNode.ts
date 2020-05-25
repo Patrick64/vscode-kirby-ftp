@@ -6,7 +6,14 @@ export class FtpNode extends FileNode {
 	
 	constructor(private entry, private host: string, private _parent: string) {
 		super();
-		var uri = `kirby://${host}${_parent}${entry.name}`;
+		var uri;
+		if (_parent === '') {
+			uri = `kirby://${host}${entry.name}`;
+		} else {
+			uri = `kirby://${host}${_parent}/${entry.name}`;
+		}
+		// var uri = `kirby://${host}${_parent}${entry.name}`;
+
 		this._resource = Uri.parse(uri);
 	}
 

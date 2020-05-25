@@ -45,7 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
         editConfig();
 
     } );
-    vscode.commands.registerCommand('kirby.uploadFile', (node: ITreeNode) => {
+    vscode.commands.registerCommand('kirby.uploadNode', (node: ITreeNode) => {
 		// vscode.workspace.openTextDocument(node.resource).then(document => {
 		// 	vscode.window.showTextDocument(document);
         // });
@@ -58,6 +58,20 @@ export function activate(context: vscode.ExtensionContext) {
 
         
     });
+    vscode.commands.registerCommand('kirby.downloadNode', (node: ITreeNode) => {
+		// vscode.workspace.openTextDocument(node.resource).then(document => {
+		// 	vscode.window.showTextDocument(document);
+        // });
+       // vscode.window.showInformationMessage("todo: Upload file ");
+       try {
+            node.download();
+       } catch (err)  {
+           vscode.window.showErrorMessage(err);
+       }
+
+        
+    });
+
     // vscode.window.regist FileSystemProvider
     // vscode.workspace.registerFileSystemProvider('kirby-ftp',vscode.)
    
@@ -69,6 +83,12 @@ export function activate(context: vscode.ExtensionContext) {
        
         
     });
+    context.subscriptions.push( 
+        vscode.workspace.onDidSaveTextDocument((e:vscode.TextDocument)=>{
+         
+        }),
+      );
+
     try {
         mainController.loadAllProfiles();
     } catch (err) {
