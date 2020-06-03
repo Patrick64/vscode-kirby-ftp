@@ -58,7 +58,7 @@ export class FtpModel {
 					e(err);
 				} else {
 					c(this.sort(
-						list.filter(entry => entry.name != "." && entry.name != "..")
+						list.filter(entry => entry && entry.name != "." && entry.name != "..")
 						.map(entry => new FtpNode(entry, this.host, this.rootDir))));
 				}
 			});
@@ -81,7 +81,7 @@ export class FtpModel {
 							if (typeof list == "undefined") return [];
 							return c(
 								this.sort(
-									list.filter(entry => entry.name != "." && entry.name != "..")
+									list.filter(entry => entry && entry.name != "." && entry.name != "..")
 									.map(entry => new FtpNode(entry, this.host, node.path))));
 						} catch (err) { 
 							e(err); 

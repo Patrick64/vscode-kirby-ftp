@@ -110,17 +110,21 @@ export class CompareModel {
 
 	public getSyncInfoForNode(node:CompareNode):ISyncInfoNode | null {
 		//  get array of nodes leading to this one ie ["wp-content","themes","mytheme"]
-		const path = node.getParentNodes();
-		path.push(node);
-		path.shift(); // remove the profile node
-		// starting from the root work up the tree to find the correct prior sync node
-		return path.reduce((syncNode,compareNode)=> {
-			if (syncNode !== null && syncNode.children[compareNode.name]) {
-				return syncNode.children[compareNode.name];
-			} else {
-				return null;
-			}
-		},this.priorSyncInfo.nodes)
+		if (this.priorSyncInfo) {
+			const path = node.getParentNodes();
+			path.push(node);
+			path.shift(); // remove the profile node
+			// starting from the root work up the tree to find the correct prior sync node
+			return path.reduce((syncNode,compareNode)=> {
+				if (syncNode !== null && syncNode.children[compareNode.name]) {
+					return syncNode.children[compareNode.name];
+				} else {
+					return null;
+				}
+			},this.priorSyncInfo.nodes)
+		} else {
+			return null;
+		}
 	}
 
 
@@ -161,9 +165,12 @@ export class CompareModel {
 					}
 				});
 				this.removeNodelessChildren(node);	
+				node.setFolderHasRefreshed(isLocal);
 				this.updateFolderStateRecursive(node);
 				this.nodeUpdated(node);
 			} catch(err) {
+				console.error('failed ' + (isLocal ? 'local ' : 'remote ') + node.path,err);
+				vscode.window.showErrorMessage("failed to list folder on " + (isLocal ? 'local ' : 'remote ') + err );
 				node.isFailed = true;
 			}
 		} else {
@@ -173,6 +180,7 @@ export class CompareModel {
 				node.children.forEach(c => c.setRemoteNode(null));
 			}
 			this.removeNodelessChildren(node);	
+			node.setFolderHasRefreshed(isLocal);
 			this.updateFolderStateRecursive(node);
 			this.nodeUpdated(node);
 		}
@@ -224,6 +232,7 @@ export class CompareModel {
 
 		return compareAllFiles()
 		.then(() => compareAllFolders())
+		.then(() => node.setFolderHasCompletedComparison())
 		.then(() => node.updateFolderState());
 		
 	}
@@ -232,6 +241,7 @@ export class CompareModel {
 		await this.refreshFolder(node.parentNode,true);
 		await this.refreshFolder(node.parentNode,false);
 		await node.doComparison(this.localModel,this.remoteModel);
+		await node.updateFolderState();
 		// await node.updateFolderState();
 		// this.nodeUpdated(null);
 		await this.saveSyncInfo();
@@ -544,9 +554,9 @@ export class CompareModel {
 	}
 	public updateFolderStateRecursive(node:CompareNode) {
 		node.updateFolderState();
-		if (node.parentNode) {
-			this.updateFolderStateRecursive(node.parentNode);
-		}
+		// if (node.parentNode) {
+		// 	this.updateFolderStateRecursive(node.parentNode);
+		// }
 	}
 
 	private setNodeIsLoading(node:CompareNode,isLoading:boolean):void {

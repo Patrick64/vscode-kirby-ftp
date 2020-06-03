@@ -24,7 +24,15 @@ export class CompareNode implements ITreeNode {
 	private priorSyncInfoNode:ISyncInfoNode = null;
 	/** if we couldn't connect to this node for some reson  */
 	public isFailed:boolean = false; 
-	
+	/** tracks how complete the comparison process is:
+	 * - none: No comparisons done
+	 * - localOnly: The diretory has been scanned locally (local is usally disk so done first as its fastest)
+	 * - comparing: The directory on local and remote has been scanned and found to different from
+	 *   the stored database so its awaiting a full file comparison. 
+	 *   if they had matched based on prior sync info it would have gone striaght to complete
+	 * - complete:  All comparisons are complete so can be confident we've got the right node state
+	*/
+	private compareProgress: 'none' | 'localOnly' | 'comparing' | 'complete' = 'none';
 //	contextValue = 'file';
 	
 	// private _rando:number;
@@ -42,6 +50,9 @@ export class CompareNode implements ITreeNode {
 			} else {
 			}
 			var a=1;
+			if (localNode) this.compareProgress = 'localOnly';
+			if (remoteNode) this.compareProgress = 'comparing';
+			
 		
 	}
 
@@ -63,10 +74,15 @@ export class CompareNode implements ITreeNode {
 
 	public setLocalNode(_localNode) {
 		this.localNode = _localNode;
+
+		if (this.compareProgress === 'none') this.compareProgress = 'localOnly';
 	}
 
 	public setRemoteNode(_remoteNode) {
 		this.remoteNode = _remoteNode;
+		if (this.compareProgress === 'none' || this.compareProgress === 'localOnly') {
+			this.compareProgress = 'comparing';
+		}
 	}
 
 	public get hasChildren():boolean {
@@ -209,6 +225,7 @@ export class CompareNode implements ITreeNode {
 			
             // }, 1000 );
 		}
+		this.compareProgress = 'complete';
 		this.setPriorSyncInfoNode();
 	} catch(err) {
 		this.nodeState = CompareNodeState.error;
@@ -266,7 +283,23 @@ export class CompareNode implements ITreeNode {
 			})
 	}
 
+	/** useful for knowing when to show the state of a folder */
+	public hasCompareFinished():boolean {
+		return this.compareProgress === 'complete';
+	}
 
+	public setFolderHasRefreshed(isLocal:boolean) {
+		if (this.compareProgress === 'none' && isLocal) {
+			this.compareProgress = 'localOnly';
+		} else if (this.compareProgress !== 'complete') {
+			this.compareProgress = 'comparing';
+		}
+	}
+
+	/** the folder has completed all comparisons including subfolders and files */
+	public setFolderHasCompletedComparison() {
+		this.compareProgress = 'complete';
+	}
 
 	public openDiff() {
 		this.compareModel.openDiff(this);
@@ -325,7 +358,9 @@ export class CompareNode implements ITreeNode {
 	public updateFolderState() {
 		if (this.isFolder) {
 			var newState:CompareNodeState = CompareNodeState.equal;
-			if (!this.localNode && !this.remoteNode) {
+			if (!this.hasCompareFinished()) {
+				newState = CompareNodeState.unknown;
+			} else if (!this.localNode && !this.remoteNode) {
 				newState = CompareNodeState.error;
 			} else	if (!this.localNode) {
 				newState = CompareNodeState.remoteOnly;
@@ -335,7 +370,11 @@ export class CompareNode implements ITreeNode {
 				newState = CompareNodeState.equal;
 			} else {
 				var states = this.children.reduce((states: CompareNodeState[], childNode: CompareNode) => {
-					if (states.indexOf(childNode.nodeState)==-1) states.push(childNode.nodeState)
+					if (!childNode.hasCompareFinished()) {
+						states.push(CompareNodeState.unknown);
+					} else {
+						if (states.indexOf(childNode.nodeState)==-1) states.push(childNode.nodeState)
+					}
 					return states;
 					// if (childNode.nodeState > newState) return childNode.nodeState; else return newState;
 					// if (newState == CompareNodeState.equal)
