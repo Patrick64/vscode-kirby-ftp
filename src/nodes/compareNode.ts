@@ -98,7 +98,7 @@ export class CompareNode implements ITreeNode {
 	}
 
 	public set children(c) {
-		c = this._children;
+		this._children = c;
 	}
 
 	public get contextValue():string {

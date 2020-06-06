@@ -272,9 +272,12 @@ export class CompareModel {
 		.catch(err => {
 					console.error(err)
 					
-						vscode.window.showErrorMessage("Remote listing failed. " + err );
+					vscode.window.showErrorMessage("Remote listing failed. " + err );
 					// return Promise.reject(err);
 					node.isFailed = true;
+					node.children = []; // remove all children as this refresh has failed
+					console.log("children " , node.children.length);
+					this.nodeUpdated(node);
 					return Promise.resolve();
 
 				});
