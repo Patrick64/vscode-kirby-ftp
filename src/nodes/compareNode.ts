@@ -146,11 +146,23 @@ export class CompareNode implements ITreeNode {
             this.nodeState = CompareNodeState.localOnly;
         } else if (this.isFolder) {
 			this.nodeState = CompareNodeState.unknown; // leave until updateFolderState is called.
-		} else if (this.priorSyncInfoNode && this.isSyncInfoEqual(this.priorSyncInfoNode)) {
+		} else if (!this.priorSyncInfoNode) {
+			// no prior sync info so we need to do a full comparison
+			const {isEqual, localHash, remoteHash} = await this.doFullFileComparison(localModel, remoteModel);
+			// stores hashs to save in db for comparison later
+			this.localNode.hash = localHash;
+			this.remoteNode.hash = remoteHash;
+			if (isEqual) {
+				this.nodeState = CompareNodeState.equal;
+			} else {
+				this.nodeState = CompareNodeState.unequal;
+			}
+		} else if (this.isSyncInfoEqual(this.priorSyncInfoNode)) {
 			// both local and remote files haven't changed since we last looked 
 			// so use the state we recorded then to save time
 			this.nodeState = this.priorSyncInfoNode.nodeState;
-		} else if (!this.priorSyncInfoNode || !this.isSyncInfoEqual(this.priorSyncInfoNode)) {
+		} else {
+			// current file info is different from priorSyncInfo, eg the file size or date has changed on local or remote
 			const {isEqual, localHash, remoteHash} = await this.doFullFileComparison(localModel, remoteModel);
 			this.localNode.hash = localHash;
 			this.remoteNode.hash = remoteHash;
@@ -168,7 +180,7 @@ export class CompareNode implements ITreeNode {
 			} else {
 				this.nodeState = CompareNodeState.unequal;
 			}
-
+		}
 			// } else if (this.priorSyncInfoNode.nodeState == CompareNodeState.equal || this.priorSyncInfoNode.nodeState == CompareNodeState.localChanged) {
 			// 	this.nodeState = CompareNodeState.localChanged;
 			// } else if (this.priorSyncInfoNode.nodeState == CompareNodeState.remoteChanged && this.priorSyncInfoNode?.local?.hash && this.priorSyncInfoNode.local.hash == localHash ) {
@@ -212,19 +224,19 @@ export class CompareNode implements ITreeNode {
 		// 	} else {
 		// 		this.nodeState = CompareNodeState.unequal;
 		// 	}
-        } else if (this.localNode.size != this.remoteNode.size)  {
-            this.nodeState = CompareNodeState.unequal;
-        } else {
-            // setInterval( ()=>{  
-			vscode.window.setStatusBarMessage("Kirby FTP: Comparing " + this.name);
-			const isEqual = await this.doFullFileComparison(localModel, remoteModel);
+        // } else if (this.localNode.size != this.remoteNode.size)  {
+        //     this.nodeState = CompareNodeState.unequal;
+        // } else {
+        //     // setInterval( ()=>{  
+		// 	vscode.window.setStatusBarMessage("Kirby FTP: Comparing " + this.name);
+		// 	const isEqual = await this.doFullFileComparison(localModel, remoteModel);
 			
-				// localModel.closeStream();
-				// remoteModel.closeStream();
-			this.nodeState = isEqual ? CompareNodeState.equal : CompareNodeState.unequal;
+		// 		// localModel.closeStream();
+		// 		// remoteModel.closeStream();
+		// 	this.nodeState = isEqual ? CompareNodeState.equal : CompareNodeState.unequal;
 			
-            // }, 1000 );
-		}
+        //     // }, 1000 );
+		// }
 		this.compareProgress = 'complete';
 		this.setPriorSyncInfoNode();
 	} catch(err) {
@@ -306,6 +318,7 @@ export class CompareNode implements ITreeNode {
 	}
 
 	public get iconName(): string {
+		if (this.compareProgress !== 'complete')  return 'loading';
 		if (this.isLoading) return 'loading';
 		if (this.isFailed) return 'error';
 		if (this.isFolder) {
@@ -317,7 +330,7 @@ export class CompareNode implements ITreeNode {
 			// 	return 'folder-local';
 			// } else {
 				switch (this.nodeState) {
-					case CompareNodeState.unknown: return 'loading'; 
+					case CompareNodeState.unknown: return 'error'; 
 					case CompareNodeState.error: return 'error'; 
 					case CompareNodeState.equal: return 'folder-equal'; 
 					case CompareNodeState.conflict: return 'folder-conflict'; 
@@ -331,7 +344,7 @@ export class CompareNode implements ITreeNode {
 			// }
 		}
 		switch (this.nodeState) {
-			case CompareNodeState.unknown: return 'loading'; 
+			case CompareNodeState.unknown: return 'error'; 
 			case CompareNodeState.error: return 'error'; 
 			case CompareNodeState.equal: return 'equal'; 
 			case CompareNodeState.conflict: return 'conflict'; 

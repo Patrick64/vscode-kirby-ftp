@@ -9,6 +9,7 @@ export class MainController {
 
     private profileNodes: ProfileNode[] = [];
     private allTrees:FtpTreeDataProvider[] = [];
+    private loadingProgress: Array<{max: number, queueLength: number}>;
 
     constructor(private compareTree:FtpTreeDataProvider, private filterTree:FtpTreeDataProvider, private database:Database)  {
         this.allTrees = [compareTree, filterTree];
@@ -45,6 +46,21 @@ export class MainController {
         });
     }
 
+    private queueChanged({profileIndex,queueLength,lengthChanged}) {
+        const progress = this.loadingProgress[profileIndex];
+        if (lengthChanged > 0) {
+            progress.max += lengthChanged;
+        }
+        progress.queueLength = queueLength;
+        this.updateProgressBar();
+    }
+
+    private updateProgressBar() {
+        const max = this.loadingProgress.reduce((p,c) => p + c.max, 0 );
+        const queueLength = this.loadingProgress.reduce((p,c) => p + c.queueLength, 0 );
+        vscode.window.setStatusBarMessage("Progress: " + (max - queueLength) + "/" + max,1000);
+    }
+
     /**
      * This kicks everything off by creating the profile node objects, adding them to the treeviews
      * then starting the comparison
@@ -52,7 +68,20 @@ export class MainController {
      */
     private async loadSettingsProfiles(profiles:ISettings[]) {
 		try {
-            this.profileNodes = profiles.map(p => new ProfileNode(p,this.updateProfileNode,this.database) );
+            this.loadingProgress = profiles.map(p => ({
+                max: 0,
+                queueLength: 0
+            }))
+            this.profileNodes = profiles.map((p, profileIndex) => new ProfileNode(
+                p,
+                this.updateProfileNode,
+                this.database,
+                {
+                    onQueueChanged: ({queueLength, lengthChanged}) => {
+                        this.queueChanged({profileIndex, queueLength, lengthChanged});
+                    }
+                }
+            ) );
             this.addProfileNodesToAllTrees();
 			this.updateProfileNode(null);
 			await Promise.all(this.profileNodes.map(async profileNode =>  {

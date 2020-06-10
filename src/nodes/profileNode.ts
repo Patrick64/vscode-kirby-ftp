@@ -22,7 +22,12 @@ export class ProfileNode extends CompareNode {
     public isFailed:boolean = false; 
     private nodeName:string;
     public connectionStatus:ConnectionStatus = ConnectionStatus.Connecting;
-    constructor(private profileSettings:ISettings,private nodeUpdated:Function, private database: Database) {
+    constructor(
+        private profileSettings:ISettings,
+        private nodeUpdated:Function, 
+        private database: Database,
+        {onQueueChanged}
+        ) {
         // just call super function will nulls for now, we'll add the reuiqred values below
         super(null,null,"",path.sep,true,null, null);
         
@@ -39,7 +44,8 @@ export class ProfileNode extends CompareNode {
             remoteModel,
             nodeUpdated,
             this,
-            this.database );	
+            this.database,
+            { onQueueChanged } );	
         // setup values for this being CompareNode
         this.localNode = localModel.getRootNode();
         this.remoteNode = remoteModel.getRootNode(); 

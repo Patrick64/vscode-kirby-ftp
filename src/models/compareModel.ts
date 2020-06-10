@@ -23,9 +23,15 @@ export class CompareModel {
 	private priorSyncInfo:ISyncInfo | null = null;
 
 	
-	constructor(private localModel, private remoteModel, private nodeUpdated:Function, private profileNode: ProfileNode,private database: Database) {
+	constructor(
+		private localModel, 
+		private remoteModel, 
+		private nodeUpdated:Function, 
+		private profileNode: ProfileNode,
+		private database: Database,
+		{ onQueueChanged } ) {
 		
-		this.promiseQueue = new PromiseQueue(this.onError);
+		this.promiseQueue = new PromiseQueue(this.onError, onQueueChanged);
 		//this.refreshAll();
 		// setInterval( () => { this.nodeUpdated(null); }, 1000);
 
@@ -72,20 +78,23 @@ export class CompareModel {
 	// 	return this.profileNode.getChildNodes();
 	// }
 
-	public refreshAll() {
+	public async refreshAll() {
 		if (this.profileNode.connectionStatus == ConnectionStatus.Connected) {
-			this.promiseQueue.addToQueue(() => {
+			// this.promiseQueue.addToQueue(() => {
 				console.log('FTP refresall is started.');
-				vscode.window.setStatusBarMessage("Kirby FTP: Refreshing files list");
-				return this.doFullRefresh(this.profileNode)
-					.then(() => {
+				// vscode.window.setStatusBarMessage("Kirby FTP: Refreshing files list");
+				try {
+				await this.doFullRefresh(this.profileNode);
+					// .then(() => {
 						console.log('FTP refresall is done.');
 						vscode.window.setStatusBarMessage("Kirby FTP: Finished refreshing files list");
-					}).catch(err => {
+				} catch(err) {
+					// }).catch(err => {
 						console.log(err)
 						vscode.window.showErrorMessage("Kirby FTP: " + err);
-					});
-			});
+				}
+					// });
+			// });
 		}
 	}
 
@@ -190,19 +199,28 @@ export class CompareModel {
 		node.children = node.children.filter( n => (n.remoteNode || n.localNode));
 	}
 
+
 	private async refreshFolderRecursivly(node,isLocal) {
-		
-		await this.refreshFolder(node,isLocal);
-		await sleep(this.hasUserRequestedAPause ? 500 : 0)
-		this.hasUserRequestedAPause = false;
-		return node.children
-			.filter( c => c.isFolder )
-			.reduce( (promise,subFolder) => promise.then(() => this.refreshFolderRecursivly(subFolder,isLocal) ), Promise.resolve())
-			.then(() => {
-				this.nodeUpdated(node.isRootNode ? null : node);
-			});
-		
-		
+		const refreshSubfolder = async (node,isLocal) => {
+			vscode.window.setStatusBarMessage(node.name);
+			await this.refreshFolder(node,isLocal);
+			await sleep(this.hasUserRequestedAPause ? 500 : 0)
+			this.hasUserRequestedAPause = false;
+			const subFolders = node.children.filter( c => c.isFolder );
+			for (const subFolder of subFolders) {
+				// add all the folders to the queue. Don't `await` this to finish though as then it would never run as these are run at the end
+				this.promiseQueue.addToQueue(() => 
+					refreshSubfolder(subFolder,isLocal)
+				,20, async () =>  {
+					// Cancel
+					throw new Error('cancel');
+				});
+			}
+			this.nodeUpdated(node);
+		};
+		await refreshSubfolder(node, isLocal);
+		// await the finish of the queue by adding an item with priorty 25 so it runs after 
+		await this.promiseQueue.addToQueue(null	,25);
 	}
 
 	private doComparisonsRecursivly(node:CompareNode,priorSyncInfoNode:ISyncInfoNode) {
@@ -256,16 +274,17 @@ export class CompareModel {
 	private async doFullRefresh(node:CompareNode) {
 		
 		return this.refreshFolderRecursivly(node,true)
-		.then(() => this.nodeUpdated(null))
+		.then(() => this.nodeUpdated(node))
 		.then(()=>sleep(500))
 		.then(() => {
 			return this.refreshFolderRecursivly(node,false)
 		})
-		.then(() => this.nodeUpdated(null))
+		.then(() => this.nodeUpdated(node))
 		.then(()=>sleep(500))
 		.then(() => this.doComparisonsRecursivly(node,this.priorSyncInfo ? this.priorSyncInfo.nodes : null))
 		.then(async () => {
 			await this.saveSyncInfo();
+			this.nodeUpdated(null);
 			//const stored = await this.database.getSyncInfo(syncInfo);
 			
 		})
